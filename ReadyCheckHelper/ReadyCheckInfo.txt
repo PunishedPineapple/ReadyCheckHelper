@@ -1,0 +1,37 @@
+﻿Ready check object layout:
+
+0x0		- vtable pointer?
+0x8		- unknown
+0x10	- unknown pointer
+0x18	- unknown
+0x20	- State flag for window that asks whether to commence ready check.  Was 75 when visible.
+0x28	- unknown pointer, used semi-frequently in ready check code.
+0x30	- unknown
+0x34	- Window state flag?  Seems to be 74 or 75 when the ready check window is visible.  Was 72 in alliance raid, may be bitmask.
+0x38	- unknown
+0x3C	- Some kind of countdown timer probably.  Keeps changing until the button to view ready check window disappears.
+0x40	- unknown
+0x48	- unknown pointer
+0x50	- unknown
+0x58	- unknown
+0x60	- unknown
+0x68	- ???See how this varies with number of party members.???
+0x70	- unknown
+.
+.
+.
+0xA0	- unknown pointer
+0xA8	- unknown pointer
+0xB0	- Start of an array for each party/alliance member:
+			First eight bytes are varying ids.  Your Content ID if you are the ready checker, the object ID number if someone else, but it's zero for the first eight people (i.e., those in your party)(except first one if you're the ready checker).
+			Second eight bytes are just a flag: 0 while awaiting response in a normal party, 2 for ready, 3 for not ready, 4 seen in cross-world alliance, may mean no party member, 1 seen while awaiting response in cross-world alliance and regular alliance.
+0x230	- Another array of something.  Was just alternating 0s and 1s (eight bytes each) at completion of alliance ready check.  Possible that this could just be an extended area for 48-man alliances?
+0x3B0	- Start of other stuff.
+
+
+Notes:
+
+- Order of the ready check flags for the people in your party (not alliance, not crossworld) follows unknown rules, and does not have an ID associated with the flags.
+- Order of the ready check flags seem to be the order of the alliance list sorting for the other two parties in a non-cross-world alliance.  This doesn't matter though since you have object IDs to correlate.
+- In a non-cross-world alliance, the people in the other parties have their object ID stored with their ready check flag.
+- In a cross-world party, Content ID is stored with the ready check flag.
