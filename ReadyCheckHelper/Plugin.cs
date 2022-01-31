@@ -182,7 +182,48 @@ namespace ReadyCheckHelper
 		{
 			if( (IntPtr)FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance() != IntPtr.Zero )
 			{
-				
+				try
+				{
+					var readyCheckData = MemoryHandler.GetReadyCheckInfo();
+					var readyCheckProcessedList = new List<Tuple<String, Byte>>();
+
+					for( int i = 0; i < readyCheckData.Length; ++i )
+					{
+						//	For our party, we need to do the correlation based on party data.
+						if( i < FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->MemberCount )
+						{
+							//***** TODO: Do something, but it's really difficult to tell how the ready check data is correlated for your immediate local party. *****
+						}
+						//	For the alliance members (anything above our current party), there should be object IDs to make matching easy.
+						else if( readyCheckData[i].ID > 0 && ( readyCheckData[i].ID & 0xFFFFFFFF ) != 0xE0000000 )
+						{
+							var pFoundAllianceMember = FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->GetPartyMemberByObjectId( (uint)readyCheckData[i].ID );
+							if( (IntPtr)pFoundAllianceMember != IntPtr.Zero )
+							{
+								string name = System.Text.Encoding.UTF8.GetString( pFoundAllianceMember->Name, 64 );	//***** TODO: Magic Number *****
+								name = name.Substring( 0, name.IndexOf( '\0' ) );
+								readyCheckProcessedList.Add( Tuple.Create( name, readyCheckData[i].ReadyFlag ) );
+							}
+						}
+						//***** TODO: How do things work if you're a non-cross-world alliance without people in the same zone? *****
+					}
+
+					var notReadyList = new List<String>();
+
+					foreach( var person in readyCheckProcessedList )
+					{
+						if( person.Item2 == 3 )
+						{
+							notReadyList.Add( person.Item1 );
+						}
+					}
+
+					ListUnreadyPlayersInChat( notReadyList );
+				}
+				catch( Exception e )
+				{
+					PluginLog.LogError( $"Exception caught in \"ProcessReadyCheckResults_Regular()\": {e}." );
+				}
 			}
 			else
 			{
@@ -204,7 +245,7 @@ namespace ReadyCheckHelper
 						var pFoundPartyMember = FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.GetMemberByContentId( readyCheckEntry.ID );
 						if( (IntPtr)pFoundPartyMember != IntPtr.Zero )
 						{
-							string name = System.Text.Encoding.UTF8.GetString( pFoundPartyMember->Name, 30 );
+							string name = System.Text.Encoding.UTF8.GetString( pFoundPartyMember->Name, 30 );   //***** TODO: Magic Number *****
 							name = name.Substring( 0, name.IndexOf( '\0' ) );
 							readyCheckProcessedList.Add( Tuple.Create( name, readyCheckEntry.ReadyFlag ) );
 						}
@@ -266,6 +307,7 @@ namespace ReadyCheckHelper
 				}
 			}
 
+			//***** TODO: We should delay actually printing it to chat by a short amount to ensure that it comes after the game's built in message. *****
 			if( notReadyList.Count > 0 )
 			{
 				mChatGui.Print( notReadyString );

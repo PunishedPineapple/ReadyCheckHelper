@@ -35,8 +35,6 @@ namespace ReadyCheckHelper
 					mReadyCheckEndHook = new Hook<ReadyCheckFuncDelegate>( mfpOnReadyCheckEnd, mdReadyCheckEnd );
 					mReadyCheckEndHook.Enable();
 				}
-
-				mpGroupManager = sigScanner.GetStaticAddressFromSig( "48 8D 0D ?? ?? ?? ?? 44 8B E7" );
 			}
 			catch( Exception e )
 			{
@@ -54,7 +52,6 @@ namespace ReadyCheckHelper
 			mReadyCheckEndHook = null;
 			mpReadyCheckObject = IntPtr.Zero;
 			mRawReadyCheckArray = null;
-			mpGroupManager = IntPtr.Zero;
 		}
 
 		private static void ReadyCheckBeginDetour( IntPtr ptr )
@@ -109,33 +106,6 @@ namespace ReadyCheckHelper
 			return retVal;
 		}
 
-		public static FFXIVClientStructs.FFXIV.Client.Game.Group.PartyMember[] GetAllianceMemberInfo()
-		{
-			FFXIVClientStructs.FFXIV.Client.Game.Group.PartyMember[] retVal = new FFXIVClientStructs.FFXIV.Client.Game.Group.PartyMember[24];
-
-			if( mpGroupManager != IntPtr.Zero )
-			{
-				for( int i = 0; i < 24; ++i )
-				{
-					retVal[i] = (FFXIVClientStructs.FFXIV.Client.Game.Group.PartyMember)Marshal.PtrToStructure( new IntPtr( mpGroupManager.ToInt64() + i * 0x230 ), typeof( FFXIVClientStructs.FFXIV.Client.Game.Group.PartyMember ) );
-				}
-			}
-
-			return retVal;
-		}
-
-		public static int GetNumPartyMembers()
-		{
-			if( mpGroupManager != IntPtr.Zero )
-			{
-				return ((FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager)Marshal.PtrToStructure( mpGroupManager, typeof( FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager ) )).MemberCount;
-			}
-			else
-			{
-				return 0;
-			}
-		}
-
 		//	Magic Numbers
 		private static readonly int mArrayOffset = 0xB0;
 		private static readonly int mArrayLength = 96;
@@ -143,7 +113,6 @@ namespace ReadyCheckHelper
 		//	Misc.
 		private static IntPtr mpReadyCheckObject;
 		private static IntPtr[] mRawReadyCheckArray; //Need to use IntPtr as the type here because of our marshaling options.  Can convert it later.
-		private static IntPtr mpGroupManager;
 
 		public static bool IsReadyCheckHappening { get; private set; } = false;
 

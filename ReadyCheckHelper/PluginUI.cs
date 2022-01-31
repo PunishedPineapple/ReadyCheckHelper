@@ -108,8 +108,6 @@ namespace ReadyCheckHelper
 					else
 					{
 						var readyCheckdata = MemoryHandler.GetReadyCheckInfo();
-						var allianceMembers = MemoryHandler.GetAllianceMemberInfo();
-						byte groupCount = 0;
 
 						ImGui.Columns( 4 );
 						ImGui.Text( "General Info:" );
@@ -117,9 +115,9 @@ namespace ReadyCheckHelper
 						ImGui.Text( $"Number of Party Members: {FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->MemberCount}" );
 						ImGui.Text( $"Is Alliance: {FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->IsAlliance}" );
 						ImGui.Text( $"Is Cross-World: {FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance()->IsCrossRealm}" );
-						groupCount = FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance()->GroupCount;
-						ImGui.Text( $"Number of Cross-World Groups: {groupCount}" );
-						for( int i = 0; i < groupCount; ++i )
+						byte crossWorldGroupCount = FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance()->GroupCount;
+						ImGui.Text( $"Number of Cross-World Groups: {crossWorldGroupCount}" );
+						for( int i = 0; i < crossWorldGroupCount; ++i )
 						{
 							ImGui.Text( $"Number of Party Members (Group {i}): {FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.GetGroupMemberCount( i )}" );
 						}
@@ -132,28 +130,50 @@ namespace ReadyCheckHelper
 						}
 						ImGui.NextColumn();
 						ImGui.Text( "Party Data:" );
-						for( int i = 0; i < allianceMembers.Length; ++i )
+						for( int i = 0; i < 8; ++i )
 						{
-							fixed( byte* ptr = allianceMembers[i].Name )
+							var pGroupMember = FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->GetPartyMemberByIndex( i );
+							if( (IntPtr)pGroupMember != IntPtr.Zero )
 							{
-								string name = ( i < MemoryHandler.GetNumPartyMembers() || i >= 8 || allianceMembers[i].ContentID > 0 ) ? Marshal.PtrToStringAnsi( new IntPtr( ptr ) ) : "";
-								byte classJob = ( i < MemoryHandler.GetNumPartyMembers() || i >= 8 || allianceMembers[i].ContentID > 0 ) ? allianceMembers[i].ClassJob : (byte)0;
-								string classJobAbbr = JobDict.TryGetValue( classJob, out classJobAbbr ) ? classJobAbbr : "ERR";
-								ImGui.Text( $"Job: {classJobAbbr}, OID: {allianceMembers[i].ObjectID.ToString( "X8" )}, CID: {allianceMembers[i].ContentID.ToString( "X16" )}, Name: {name}" );
+								string name = System.Text.Encoding.UTF8.GetString( pGroupMember->Name, 64 );    //***** TODO: How to get fixed buffer lenghth instead of magic numbering it here? *****
+								name = name.Substring( 0, name.IndexOf( '\0' ) );
+
+								string classJobAbbr = JobDict.TryGetValue( pGroupMember->ClassJob, out classJobAbbr ) ? classJobAbbr : "ERR";
+								ImGui.Text( $"Job: {classJobAbbr}, OID: {pGroupMember->ObjectID.ToString( "X8" )}, CID: {pGroupMember->ContentID.ToString( "X16" )}, Name: {name}" );
+							}
+							else
+							{
+								ImGui.Text( "Party member returned as null pointer." );
+							}
+						}
+						for( int i = 0; i < 16; ++i )
+						{
+							var pGroupMember = FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->GetAllianceMemberByIndex( i );
+							if( (IntPtr)pGroupMember != IntPtr.Zero )
+							{
+								string name = System.Text.Encoding.UTF8.GetString( pGroupMember->Name, 64 );    //***** TODO: How to get fixed buffer lenghth instead of magic numbering it here? *****
+								name = name.Substring( 0, name.IndexOf( '\0' ) );
+
+								string classJobAbbr = JobDict.TryGetValue( pGroupMember->ClassJob, out classJobAbbr ) ? classJobAbbr : "ERR";
+								ImGui.Text( $"Job: {classJobAbbr}, OID: {pGroupMember->ObjectID.ToString( "X8" )}, CID: {pGroupMember->ContentID.ToString( "X16" )}, Name: {name}" );
+							}
+							else
+							{
+								ImGui.Text( "Party member returned as null pointer." );
 							}
 						}
 						ImGui.NextColumn();
 						ImGui.Text( "Cross-World Party Data:" );
-						for( int i = 0; i < groupCount; ++i )
+						for( int i = 0; i < crossWorldGroupCount; ++i )
 						{
 							for( int j = 0; j < FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.GetGroupMemberCount( i ); ++j )
 							{
-								var groupMember = FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.GetGroupMember( (uint)j, i );
-								if( (IntPtr)groupMember != IntPtr.Zero )
+								var pGroupMember = FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.GetGroupMember( (uint)j, i );
+								if( (IntPtr)pGroupMember != IntPtr.Zero )
 								{
-									string name = System.Text.Encoding.UTF8.GetString( groupMember->Name, 30 );
+									string name = System.Text.Encoding.UTF8.GetString( pGroupMember->Name, 30 );	//***** TODO: How to get fixed buffer lenghth instead of magic numbering it here? *****
 									name = name.Substring( 0, name.IndexOf( '\0' ) );
-									ImGui.Text( $"Group: {groupMember->GroupIndex}, OID: {groupMember->ObjectId.ToString( "X8" )}, CID: {groupMember->ContentId.ToString( "X16" )}, Name: {name}" );
+									ImGui.Text( $"Group: {pGroupMember->GroupIndex}, OID: {pGroupMember->ObjectId.ToString( "X8" )}, CID: {pGroupMember->ContentId.ToString( "X16" )}, Name: {name}" );
 								}
 							}
 						}
