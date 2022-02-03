@@ -1,4 +1,4 @@
-# WaymarkPresetPlugin
+# ReadyCheckHelper
 
 ## Purpose
 **WARNING: BETA PLUGIN**
