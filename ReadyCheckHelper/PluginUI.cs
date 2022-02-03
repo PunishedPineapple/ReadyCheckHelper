@@ -160,7 +160,7 @@ namespace ReadyCheckHelper
 							}
 							else
 							{
-								ImGui.Text( "Party member returned as null pointer." );
+								ImGui.Text( "Alliance member returned as null pointer." );
 							}
 						}
 						ImGui.NextColumn();

@@ -199,13 +199,28 @@ namespace ReadyCheckHelper
 					var readyCheckProcessedList = new List<Tuple<String, Byte>>();
 					bool foundSelf = false;
 
+
+					//	Grab all of the alliance members here to make lookups easier since there's no function in client structs to get an alliance member by object ID.
+					Dictionary<UInt32, String> allianceMemberDict = new Dictionary<UInt32, string>();
+					for( int i = 0; i < 16; ++i )
+					{
+						var pGroupMember = FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->GetAllianceMemberByIndex( i );
+						if( (IntPtr)pGroupMember != IntPtr.Zero )
+						{
+							string name = System.Text.Encoding.UTF8.GetString( pGroupMember->Name, 64 );    //***** TODO: How to get fixed buffer lenghth instead of magic numbering it here? *****
+							name = name.Substring( 0, name.IndexOf( '\0' ) );
+							allianceMemberDict.TryAdd( pGroupMember->ObjectID, name );
+						}
+					}
+
+					//	Correlate all of the ready check entries with party/alliance members.
 					for( int i = 0; i < readyCheckData.Length; ++i )
 					{
 						//	For our party, we need to do the correlation based on party data.
 						if( i < FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->MemberCount )
 						{
 							//	For your immediate, local party, ready check data seems to be correlated with the party index, but with you always first in the list (anyone with an index below yours will be offset by one).
-							var pFoundPartyMember = FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->GetPartyMemberByIndex(i);
+							var pFoundPartyMember = FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->GetPartyMemberByIndex( i );
 							if( (IntPtr)pFoundPartyMember != IntPtr.Zero )
 							{
 								string name = System.Text.Encoding.UTF8.GetString( pFoundPartyMember->Name, 64 );    //***** TODO: Magic Number *****
@@ -228,14 +243,12 @@ namespace ReadyCheckHelper
 								}
 							}
 						}
-						//	For the alliance members (anything above our current party), there should be object IDs to make matching easy.
+						//	For the alliance members, there should be object IDs to make matching easy.
 						else if( readyCheckData[i].ID > 0 && (readyCheckData[i].ID & 0xFFFFFFFF) != 0xE0000000 )
 						{
-							var pFoundAllianceMember = FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->GetPartyMemberByObjectId( (uint)readyCheckData[i].ID );
-							if( (IntPtr)pFoundAllianceMember != IntPtr.Zero )
+							string name = "";
+							if( allianceMemberDict.TryGetValue( (uint)readyCheckData[i].ID, out name ) )
 							{
-								string name = System.Text.Encoding.UTF8.GetString( pFoundAllianceMember->Name, 64 );    //***** TODO: Magic Number *****
-								name = name.Substring( 0, name.IndexOf( '\0' ) );
 								readyCheckProcessedList.Add( Tuple.Create( name, readyCheckData[i].ReadyFlag ) );
 							}
 						}
