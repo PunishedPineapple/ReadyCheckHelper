@@ -86,6 +86,14 @@ namespace ReadyCheckHelper
 			}
 		}
 
+		public static bool DEBUG_GetRawReadyCheckData( out IntPtr[] rawDataArray )
+		{
+			rawDataArray = new IntPtr[mArrayLength];
+			UpdateRawReadyCheckData();
+			Array.Copy( mRawReadyCheckArray, rawDataArray, mArrayLength );
+			return CanGetRawReadyCheckData();
+		}
+
 		public static ReadyCheckInfo[] GetReadyCheckInfo()
 		{
 			UpdateRawReadyCheckData();

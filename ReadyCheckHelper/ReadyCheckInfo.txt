@@ -32,6 +32,9 @@
 Notes:
 
 - Order of the ready check flags for the people in your party (not alliance, not crossworld) follows unknown rules, and does not have an ID associated with the flags.
+	- It seems like it's *probably* the order from the GroupManager, but with your own character taken and moved to the front of the list.
 - Order of the ready check flags seem to be the order of the alliance list sorting for the other two parties in a non-cross-world alliance.  This doesn't matter though since you have object IDs to correlate.
 - In a non-cross-world alliance, the people in the other parties have their object ID stored with their ready check flag.
 - In a cross-world party, Content ID is stored with the ready check flag.
+
+- Party was showing as Cross World party in the info proxy during raid; why?  Might have to change crossworld/regular detection.

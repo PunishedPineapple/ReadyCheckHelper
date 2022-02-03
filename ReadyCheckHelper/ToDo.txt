@@ -1,0 +1,5 @@
+﻿Try to figure out why we have to delay printing to chat and fix if possible.
+Add overlay icons for ready/not ready on party list.
+See if we can find a function for ready check data sent or something so we can know that a ready check is going on and the data is valid before it completes for the non-initiator.
+
+Maybe: Check food durations for synced Extremes, Savages, and Ultimates when ready checking.

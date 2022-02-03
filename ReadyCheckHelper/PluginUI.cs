@@ -43,6 +43,7 @@ namespace ReadyCheckHelper
 			DrawMainWindow();
 			DrawSettingsWindow();
 			DrawDebugWindow();
+			DrawDebugRawWindow();
 		}
 
 		protected void DrawMainWindow()
@@ -121,7 +122,7 @@ namespace ReadyCheckHelper
 						{
 							ImGui.Text( $"Number of Party Members (Group {i}): {FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.GetGroupMemberCount( i )}" );
 						}
-
+						if( ImGui.Button( "Show/Hide Raw Readycheck Data" ) ) DebugRawWindowVisible = !DebugRawWindowVisible;
 						ImGui.NextColumn();
 						ImGui.Text( "Ready Check Data:" );
 						for( int i = 0; i < readyCheckdata.Length; ++i )
@@ -186,6 +187,37 @@ namespace ReadyCheckHelper
 			ImGui.End();
 		}
 
+		protected void DrawDebugRawWindow()
+		{
+			if( !DebugRawWindowVisible )
+			{
+				return;
+			}
+
+			//	Draw the window.
+			ImGui.SetNextWindowSize( new Vector2( 1340, 568 ) * ImGui.GetIO().FontGlobalScale, ImGuiCond.FirstUseEver );
+			ImGui.SetNextWindowSizeConstraints( new Vector2( 375, 340 ) * ImGui.GetIO().FontGlobalScale, new Vector2( float.MaxValue, float.MaxValue ) );
+			if( ImGui.Begin( "Raw Ready Check Data", ref mDebugRawWindowVisible ) )
+			{
+				IntPtr[] rawData = null;
+				if( MemoryHandler.DEBUG_GetRawReadyCheckData( out rawData ) )
+				{
+					for( int i = 0; i < rawData.Length; ++i )
+					{
+						if( i % 8 > 0 ) ImGui.SameLine();
+						ImGui.Text( $"{rawData[i].ToString( "X16" )} " );
+						
+					}
+				}
+				else
+				{
+					ImGui.Text( "Raw ready check data is unavailable, most likely due to not yet having located the ready check object." );
+				}
+			}
+
+			//	We're done.
+			ImGui.End();
+		}
 		public void SetCurrentTerritoryTypeID( UInt16 ID )
 		{
 			if( ID != CurrentTerritoryTypeID )
@@ -243,6 +275,13 @@ namespace ReadyCheckHelper
 		{
 			get { return mDebugWindowVisible; }
 			set { mDebugWindowVisible = value; }
+		}
+
+		protected bool mDebugRawWindowVisible = false;
+		public bool DebugRawWindowVisible
+		{
+			get { return mDebugRawWindowVisible; }
+			set { mDebugRawWindowVisible = value; }
 		}
 
 		protected UInt16 CurrentTerritoryTypeID { get; set; }
