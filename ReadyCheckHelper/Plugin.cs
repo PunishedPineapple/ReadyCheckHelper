@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+
 using Dalamud.Plugin;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState;
@@ -42,18 +43,17 @@ namespace ReadyCheckHelper
 			//	Text Command Initialization
 			mCommandManager.AddHandler( mTextCommandName, new CommandInfo( ProcessTextCommand )
 			{
-				HelpMessage = "Testing plugin.  See code for commands."
+				HelpMessage = "Use \"/pready config\" to open the the configuration window."
 			} );
 
 			//	UI Initialization
 			mUI = new PluginUI( mConfiguration, mDataManager );
 			mPluginInterface.UiBuilder.Draw += DrawUI;
 			mPluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
-			mUI.SetCurrentTerritoryTypeID( mClientState.TerritoryType );
+			//mUI.SetCurrentTerritoryTypeID( mClientState.TerritoryType );
 			mUI.Initialize();
 
 			//	Event Subscription
-			mClientState.TerritoryChanged += OnTerritoryChanged;
 			MemoryHandler.ReadyCheckCompleteEvent += ProcessReadyCheckResults;
 		}
 
@@ -63,7 +63,6 @@ namespace ReadyCheckHelper
 			MemoryHandler.ReadyCheckCompleteEvent -= ProcessReadyCheckResults;
 			MemoryHandler.Uninit();
 			mUI.Dispose();
-			mClientState.TerritoryChanged -= OnTerritoryChanged;
 			mPluginInterface.UiBuilder.Draw -= DrawUI;
 			mPluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
 			mCommandManager.RemoveHandler( mTextCommandName );
@@ -96,7 +95,8 @@ namespace ReadyCheckHelper
 			string commandResponse = "";
 			if( subCommand.Length == 0 )
 			{
-				mUI.MainWindowVisible = !mUI.MainWindowVisible;
+				//	For now just have no subcommands act like the config subcommand
+				mUI.SettingsWindowVisible = !mUI.SettingsWindowVisible;
 			}
 			else if( subCommand.ToLower() == "config" )
 			{
@@ -106,27 +106,11 @@ namespace ReadyCheckHelper
 			{
 				mUI.DebugWindowVisible = !mUI.DebugWindowVisible;
 			}
-/*			else if( subCommand.ToLower() == "place" )
-			{
-				commandResponse = ProcessTextCommand_Place( subCommandArgs );
-			}
-			else if( subCommand.ToLower() == "import" )
-			{
-				commandResponse = ProcessTextCommand_Import( subCommandArgs );
-			}
-			else if( subCommand.ToLower() == "export" )
-			{
-				commandResponse = ProcessTextCommand_Export( subCommandArgs );
-			}
-			else if( subCommand.ToLower() == "exportall" )
-			{
-				commandResponse = ProcessTextCommand_ExportAll( subCommandArgs );
-			}
 			else if( subCommand.ToLower() == "help" || subCommand.ToLower() == "?" )
 			{
 				commandResponse = ProcessTextCommand_Help( subCommandArgs );
 				suppressResponse = false;
-			}*/
+			}
 			else
 			{
 				commandResponse = ProcessTextCommand_Help( subCommandArgs );
@@ -141,7 +125,18 @@ namespace ReadyCheckHelper
 
 		protected string ProcessTextCommand_Help( string args )
 		{
-			return "See code for valid commands.";
+			if( args.ToLower() == "config" )
+			{
+				return "Opens the settings window.";
+			}
+			else if( args.ToLower() == "debug" )
+			{
+				return "Opens a window containing party and ready check object data.";
+			}
+			else
+			{
+				return "Use \"/pready config\" to open the the configuration window.";
+			}
 		}
 
 		protected void DrawUI()
@@ -154,17 +149,11 @@ namespace ReadyCheckHelper
 			mUI.SettingsWindowVisible = true;
 		}
 
-		protected void OnTerritoryChanged( object sender, UInt16 ID )
-		{
-			CurrentTerritoryTypeID = ID;
-			mUI.SetCurrentTerritoryTypeID( ID );
-		}
-
 		unsafe protected void ProcessReadyCheckResults( object sender, System.EventArgs e )
 		{
 			if( (IntPtr)FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance() != IntPtr.Zero )
 			{
-				if( (IntPtr)FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance() != IntPtr.Zero )
+				if( (IntPtr)FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance() != IntPtr.Zero )
 				{
 					//	We're only in a crossworld party if the cross realm proxy says we are; however, it can say we're cross-realm when
 					//	we're in a regular party if we entered an instance as a cross-world party, so account for that too.
@@ -198,7 +187,6 @@ namespace ReadyCheckHelper
 					var readyCheckData = MemoryHandler.GetReadyCheckInfo();
 					var readyCheckProcessedList = new List<Tuple<String, Byte>>();
 					bool foundSelf = false;
-
 
 					//	Grab all of the alliance members here to make lookups easier since there's no function in client structs to get an alliance member by object ID.
 					Dictionary<UInt32, String> allianceMemberDict = new Dictionary<UInt32, string>();
@@ -368,8 +356,6 @@ namespace ReadyCheckHelper
 
 		public string Name => "ReadyCheckHelper";
 		protected const string mTextCommandName = "/pready";
-
-		public UInt16 CurrentTerritoryTypeID { get; protected set; }
 
 		protected DalamudPluginInterface mPluginInterface;
 		protected ClientState mClientState;

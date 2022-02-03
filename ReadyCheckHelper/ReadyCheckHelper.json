@@ -1,11 +1,12 @@
 {
   "Author": "PunishedPineapple",
   "Name": "Ready Check Helper",
-  "Description": "Extends the game's built-in ready check.",
+  "Punchline": "Extends the game's built-in ready check.",
+  "Description": "Displays the names of the players that were not ready in chat following the completion of a ready check.",
   "InternalName": "ReadyCheckHelper",
   "AssemblyVersion": "0.9.0.0",
-  "RepoUrl": "https://github.com/PunishedPineapple",
+  "RepoUrl": "https://github.com/PunishedPineapple/ReadyCheckHelper",
   "ApplicableVersion": "any",
   "Tags": [ "Ready Check", "Ready", "Check" ],
-  "DalamudApiLevel": 4
+  "DalamudApiLevel": 5
 }

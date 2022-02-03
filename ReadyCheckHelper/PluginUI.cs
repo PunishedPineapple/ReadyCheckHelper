@@ -40,18 +40,9 @@ namespace ReadyCheckHelper
 		public void Draw()
 		{
 			//	Draw the sub-windows.
-			DrawMainWindow();
 			DrawSettingsWindow();
 			DrawDebugWindow();
 			DrawDebugRawWindow();
-		}
-
-		protected void DrawMainWindow()
-		{
-			if( !MainWindowVisible )
-			{
-				return;
-			}
 		}
 
 		protected void DrawSettingsWindow()
@@ -218,15 +209,6 @@ namespace ReadyCheckHelper
 			//	We're done.
 			ImGui.End();
 		}
-		public void SetCurrentTerritoryTypeID( UInt16 ID )
-		{
-			if( ID != CurrentTerritoryTypeID )
-			{
-				InvalidateReadyCheck();
-			}
-
-			CurrentTerritoryTypeID = ID;
-		}
 
 		protected void ImGuiHelpMarker( string description, bool sameLine = true, string marker = "(?)" )
 		{
@@ -256,13 +238,6 @@ namespace ReadyCheckHelper
 		protected bool ReadyCheckValid { get; set; }
 
 		//	Need a real backing field on the following properties for use with ImGui.
-		protected bool mMainWindowVisible = false;
-		public bool MainWindowVisible
-		{
-			get { return mMainWindowVisible; }
-			set { mMainWindowVisible = value; }
-		}
-
 		protected bool mSettingsWindowVisible = false;
 		public bool SettingsWindowVisible
 		{
@@ -283,7 +258,5 @@ namespace ReadyCheckHelper
 			get { return mDebugRawWindowVisible; }
 			set { mDebugRawWindowVisible = value; }
 		}
-
-		protected UInt16 CurrentTerritoryTypeID { get; set; }
 	}
 }
