@@ -98,16 +98,14 @@ namespace ReadyCheckHelper
 		{
 			UpdateRawReadyCheckData();
 
-			ReadyCheckInfo[] retVal = new ReadyCheckInfo[24];
+			ReadyCheckInfo[] retVal = new ReadyCheckInfo[mArrayLength/2];
 
 			if( mRawReadyCheckArray != null )
 			{
-				for( int i = 0; i < 24; ++i )
+				for( int i = 0; i < retVal.Length; ++i )
 				{
 					retVal[i] = new ReadyCheckInfo( (byte)( mRawReadyCheckArray[i * 2 + 1].ToInt64() & 0xFF ),
-													(UInt64)mRawReadyCheckArray[i * 2],
-													(UInt64)mRawReadyCheckArray[i * 2 + 47],
-													(UInt64)mRawReadyCheckArray[i * 2 + 48] );
+													(UInt64)mRawReadyCheckArray[i * 2] );
 				}
 			}
 
@@ -143,18 +141,14 @@ namespace ReadyCheckHelper
 
 		public struct ReadyCheckInfo
 		{
-			public ReadyCheckInfo( byte readyFlag, UInt64 id, UInt64 unknown, UInt64 unknown2 )
+			public ReadyCheckInfo( byte readyFlag, UInt64 id )
 			{
 				ReadyFlag = readyFlag;
 				ID = id;
-				Unknown = unknown;
-				Unknown2 = unknown2;
 			}
 
 			public byte ReadyFlag { get; private set; }
 			public UInt64 ID { get; private set; }
-			public UInt64 Unknown { get; private set; }
-			public UInt64 Unknown2 { get; private set; }
 		}
 	}
 }
