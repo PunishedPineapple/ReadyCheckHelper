@@ -65,11 +65,11 @@ namespace ReadyCheckHelper
 		private static void ReadyCheckEndDetour( IntPtr ptr )
 		{
 			mReadyCheckEndHook.Original( ptr );
-			mpReadyCheckObject = ptr;	//	Do this for now because we don't get the ready check begin function called if we don't initiate ready check ourselves.
+			mpReadyCheckObject = ptr;   //	Do this for now because we don't get the ready check begin function called if we don't initiate ready check ourselves.
 			PluginLog.LogInformation( $"Ready check completed with object location: 0x{ptr.ToString( "X" )}" );
 			IsReadyCheckHappening = false;
 			UpdateRawReadyCheckData();  //	Update our copy of the data one last time.
-			//mpReadyCheckObject = IntPtr.Zero;	//Ideally clean this up once the ready check is complete, because this isn't in the static section, so we don't have a guarantee that it's the same every time.  For now, we can't really get rid of it, because we don't have a ready check started hook unless you're the initiator.
+										//mpReadyCheckObject = IntPtr.Zero;	//Ideally clean this up once the ready check is complete, because this isn't in the static section, so we don't have a guarantee that it's the same every time.  For now, we can't really get rid of it, because we don't have a ready check started hook unless you're the initiator.
 			if( ReadyCheckCompleteEvent != null ) ReadyCheckCompleteEvent( null, EventArgs.Empty );
 		}
 
@@ -84,6 +84,21 @@ namespace ReadyCheckHelper
 			{
 				Marshal.Copy( new IntPtr( mpReadyCheckObject.ToInt64() + mArrayOffset ), mRawReadyCheckArray, 0, mArrayLength );
 			}
+		}
+
+		public static void DEBUG_SetReadyCheckObjectAddress( IntPtr ptr )
+		{
+			mpReadyCheckObject = ptr;
+		}
+
+		public static bool DEBUG_GetRawReadyCheckObjectStuff( out byte[] rawDataArray )
+		{
+			rawDataArray = new byte[mArrayOffset];
+			if( CanGetRawReadyCheckData() )
+			{
+				Marshal.Copy( new IntPtr( mpReadyCheckObject.ToInt64() ), rawDataArray, 0, mArrayOffset );
+			}
+			return CanGetRawReadyCheckData();
 		}
 
 		public static bool DEBUG_GetRawReadyCheckData( out IntPtr[] rawDataArray )
@@ -104,7 +119,7 @@ namespace ReadyCheckHelper
 			{
 				for( int i = 0; i < retVal.Length; ++i )
 				{
-					retVal[i] = new ReadyCheckInfo( (byte)( mRawReadyCheckArray[i * 2 + 1].ToInt64() & 0xFF ),
+					retVal[i] = new ReadyCheckInfo( (ReadyCheckStateEnum)(mRawReadyCheckArray[i * 2 + 1].ToInt64() & 0xFF),
 													(UInt64)mRawReadyCheckArray[i * 2] );
 				}
 			}
@@ -141,14 +156,23 @@ namespace ReadyCheckHelper
 
 		public struct ReadyCheckInfo
 		{
-			public ReadyCheckInfo( byte readyFlag, UInt64 id )
+			public ReadyCheckInfo( ReadyCheckStateEnum readyFlag, UInt64 id )
 			{
 				ReadyFlag = readyFlag;
 				ID = id;
 			}
 
-			public byte ReadyFlag { get; private set; }
+			public ReadyCheckStateEnum ReadyFlag { get; private set; }
 			public UInt64 ID { get; private set; }
+		}
+
+		public enum ReadyCheckStateEnum : byte
+		{
+			Unknown = 0,
+			AwaitingResponse = 1,
+			Ready = 2,
+			NotReady = 3,
+			CrossWorldMemberNotPresent = 4
 		}
 	}
 }

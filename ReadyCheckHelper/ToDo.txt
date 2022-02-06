@@ -1,5 +1,23 @@
-﻿Try to figure out why we have to delay printing to chat and fix if possible.
-Add overlay icons for ready/not ready on party list.
-See if we can find a function for ready check data sent or something so we can know that a ready check is going on and the data is valid before it completes for the non-initiator.
+﻿General:
+-See if we can find a function for ready check data sent or something so we can know that a ready check is going on and the data is valid before it completes for the non-initiator.
 
-Maybe: Check food durations for synced Extremes, Savages, and Ultimates when ready checking.
+Maybe:
+-Check food durations for synced Extremes, Savages, and Ultimates when ready checking.
+
+Bugs:
+-In crossworld party, CID in the ready check data becomes zero if a person DCs, making the existing logic not work in that case.  Maybe cache the IDs at the start of a ready check?
+
+
+Priority:
+	Drawing on party/alliance lists:
+		-Pass in correlated/processed/sorted ready check info.
+		-Determine which player corresponds to which party/alliance list index.
+
+	Debug stuff:
+		-Add rest of ready check object bytes to raw debug window.
+
+	Text info:
+		-Check and hook up text link handler.
+
+	Misc:
+		-Add a basic ready check results window to bring up when the in-game one isn't available.

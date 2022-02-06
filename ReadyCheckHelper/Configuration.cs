@@ -29,6 +29,13 @@ namespace ReadyCheckHelper
 			set { mMaxUnreadyToListInChat = value; }
 		}
 
+		public bool mShowReadyCheckOnPartyAllianceList = false;
+		public bool ShowReadyCheckOnPartyAllianceList
+		{
+			get { return mShowReadyCheckOnPartyAllianceList; }
+			set { mShowReadyCheckOnPartyAllianceList = value; }
+		}
+
 		//  Plugin framework and related convenience functions below.
 		public void Initialize( DalamudPluginInterface pluginInterface )
 		{

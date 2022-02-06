@@ -22,6 +22,7 @@ namespace ReadyCheckHelper
 			CommandManager commandManager,
 			Condition condition,
 			ChatGui chatGui,
+			GameGui gameGui,
 			DataManager dataManager,
 			SigScanner sigScanner )
 		{
@@ -31,6 +32,7 @@ namespace ReadyCheckHelper
 			mCommandManager		= commandManager;
 			mCondition			= condition;
 			mChatGui			= chatGui;
+			mGameGui			= gameGui;
 			mSigScanner			= sigScanner;
 			mDataManager		= dataManager;
 
@@ -45,9 +47,13 @@ namespace ReadyCheckHelper
 			{
 				HelpMessage = "Use \"/pready config\" to open the the configuration window."
 			} );
+			mOpenReadyCheckWindowLink = mPluginInterface.AddChatLinkHandler( 1001, ( i, m ) =>
+			{
+				ShowBestAvailableReadyCheckWindow();
+			} );
 
 			//	UI Initialization
-			mUI = new PluginUI( mConfiguration, mDataManager );
+			mUI = new PluginUI( mPluginInterface, mConfiguration, mDataManager, mGameGui );
 			mPluginInterface.UiBuilder.Draw += DrawUI;
 			mPluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
 			//mUI.SetCurrentTerritoryTypeID( mClientState.TerritoryType );
@@ -65,6 +71,7 @@ namespace ReadyCheckHelper
 			mUI.Dispose();
 			mPluginInterface.UiBuilder.Draw -= DrawUI;
 			mPluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
+			mPluginInterface.RemoveChatLinkHandler();
 			mCommandManager.RemoveHandler( mTextCommandName );
 		}
 
@@ -185,7 +192,7 @@ namespace ReadyCheckHelper
 				try
 				{
 					var readyCheckData = MemoryHandler.GetReadyCheckInfo();
-					var readyCheckProcessedList = new List<Tuple<String, Byte>>();
+					var readyCheckProcessedList = new List<Tuple<String, MemoryHandler.ReadyCheckStateEnum>>();
 					bool foundSelf = false;
 
 					//	Grab all of the alliance members here to make lookups easier since there's no function in client structs to get an alliance member by object ID.
@@ -248,7 +255,7 @@ namespace ReadyCheckHelper
 
 					foreach( var person in readyCheckProcessedList )
 					{
-						if( person.Item2 == 3 )
+						if( person.Item2 == MemoryHandler.ReadyCheckStateEnum.NotReady )
 						{
 							notReadyList.Add( person.Item1 );
 						}
@@ -274,7 +281,7 @@ namespace ReadyCheckHelper
 				try
 				{
 					var readyCheckData = MemoryHandler.GetReadyCheckInfo();
-					var readyCheckProcessedList = new List<Tuple<String, Byte>>();
+					var readyCheckProcessedList = new List<Tuple<String, MemoryHandler.ReadyCheckStateEnum>>();
 
 					foreach( var readyCheckEntry in readyCheckData )
 					{
@@ -291,7 +298,7 @@ namespace ReadyCheckHelper
 
 					foreach( var person in readyCheckProcessedList )
 					{
-						if( person.Item2 == 3 )
+						if( person.Item2 == MemoryHandler.ReadyCheckStateEnum.NotReady )
 						{
 							notReadyList.Add( person.Item1 );
 						}
@@ -348,20 +355,39 @@ namespace ReadyCheckHelper
 				//	If we don't delay the actual printing to chat, sometimes it comes out before the system message in the chat log.  I don't understand why it's an issue, but this is an easy kludge to make it work right consistently.
 				Task.Run( async () =>
 				{
-					await Task.Delay( 500 );	//***** TODO: Make this value configurable, or fix the underlying issue. *****
-					mChatGui.Print( notReadyString );
+					await Task.Delay( 500 );    //***** TODO: Make this value configurable, or fix the underlying issue. *****
+					var chatEntry = new Dalamud.Game.Text.XivChatEntry
+					{
+						Type = Dalamud.Game.Text.XivChatType.SystemMessage,
+						Message = new Dalamud.Game.Text.SeStringHandling.SeString( new List<Dalamud.Game.Text.SeStringHandling.Payload>
+						{
+							//Dalamud.Game.Text.SeStringHandling.SeString.TextArrowPayloads,
+							mOpenReadyCheckWindowLink,
+							new Dalamud.Game.Text.SeStringHandling.Payloads.TextPayload( notReadyString ),
+							Dalamud.Game.Text.SeStringHandling.Payloads.RawPayload.LinkTerminator
+						} )
+					};
+					mChatGui.PrintChat( chatEntry );
 				} );
 			}
 		}
 
+		protected void ShowBestAvailableReadyCheckWindow()
+		{
+			//***** TODO: Show built in ready check window if it's still available; otherwise show a reconstruction through ImGui. *****
+			mChatGui.Print( "TODO: Handle link." );
+		}
+
 		public string Name => "ReadyCheckHelper";
 		protected const string mTextCommandName = "/pready";
+		private readonly Dalamud.Game.Text.SeStringHandling.Payloads.DalamudLinkPayload mOpenReadyCheckWindowLink;
 
 		protected DalamudPluginInterface mPluginInterface;
 		protected ClientState mClientState;
 		protected CommandManager mCommandManager;
 		protected Condition mCondition;
 		protected ChatGui mChatGui;
+		protected GameGui mGameGui;
 		protected SigScanner mSigScanner;
 		protected DataManager mDataManager;
 		protected Configuration mConfiguration;
