@@ -27,6 +27,8 @@
 			Second eight bytes are just a flag: 0 while awaiting response in a normal party, 2 for ready, 3 for not ready, 4 seen in cross-world alliance, may mean no party member, 1 seen while awaiting response in cross-world alliance and regular alliance.
 0x230	- Another array of something.  Was just alternating 0s and 1s (eight bytes each) at completion of alliance ready check.  Possible that this could just be an extended area for 48-man alliances?
 0x3B0	- Start of other stuff.
+...
+0x3C1	- Some flags, possibly in-progress and valid flags.
 
 
 Notes:
