@@ -18,6 +18,7 @@ namespace ReadyCheckHelper
 		//	Initialization
 		public Plugin(
 			DalamudPluginInterface pluginInterface,
+			Framework framework,
 			ClientState clientState,
 			CommandManager commandManager,
 			Condition condition,
@@ -28,6 +29,7 @@ namespace ReadyCheckHelper
 		{
 			//	API Access
 			mPluginInterface	= pluginInterface;
+			mFramework			= framework;
 			mClientState		= clientState;
 			mCommandManager		= commandManager;
 			mCondition			= condition;
@@ -60,13 +62,17 @@ namespace ReadyCheckHelper
 			mUI.Initialize();
 
 			//	Event Subscription
-			MemoryHandler.ReadyCheckCompleteEvent += ProcessReadyCheckResults;
+			mFramework.Update += OnGameFrameworkUpdate;
+			MemoryHandler.ReadyCheckCompleteEvent += OnReadyCheckInitiated;
+			MemoryHandler.ReadyCheckCompleteEvent += OnReadyCheckCompleted;
 		}
 
 		//	Cleanup
 		public void Dispose()
 		{
-			MemoryHandler.ReadyCheckCompleteEvent -= ProcessReadyCheckResults;
+			MemoryHandler.ReadyCheckCompleteEvent -= OnReadyCheckInitiated;
+			MemoryHandler.ReadyCheckCompleteEvent -= OnReadyCheckCompleted;
+			mFramework.Update -= OnGameFrameworkUpdate;
 			MemoryHandler.Uninit();
 			mUI.Dispose();
 			mPluginInterface.UiBuilder.Draw -= DrawUI;
@@ -156,7 +162,39 @@ namespace ReadyCheckHelper
 			mUI.SettingsWindowVisible = true;
 		}
 
-		unsafe protected void ProcessReadyCheckResults( object sender, System.EventArgs e )
+		protected void OnGameFrameworkUpdate( Framework framework )
+		{
+			//***** TODO: Process the ready check data every frame if the flag is set to do so. *****
+		}
+
+		protected void OnReadyCheckInitiated( object sender, System.EventArgs e )
+		{
+			//***** TODO: Set a flag to start processing the data every frame. *****
+		}
+
+		protected void OnReadyCheckCompleted( object sender, System.EventArgs e )
+		{
+			//***** TODO: Unset flag to start processing the data every frame. *****
+
+			//	Process the data one last time to ensure that we have the latest results.
+			ProcessReadyCheckResults();
+
+			//	Construct a list of who's not ready.
+			var notReadyList = new List<String>();
+
+			foreach( var person in mProcessedReadyCheckData )
+			{
+				if( person.ReadyState == MemoryHandler.ReadyCheckStateEnum.NotReady )
+				{
+					notReadyList.Add( person.Name );
+				}
+			}
+
+			//	Print it to chat in the desired format.
+			ListUnreadyPlayersInChat( notReadyList );
+		}
+
+		unsafe protected void ProcessReadyCheckResults()
 		{
 			if( (IntPtr)FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance() != IntPtr.Zero )
 			{
@@ -192,11 +230,11 @@ namespace ReadyCheckHelper
 				try
 				{
 					var readyCheckData = MemoryHandler.GetReadyCheckInfo();
-					var readyCheckProcessedList = new List<Tuple<String, MemoryHandler.ReadyCheckStateEnum>>();
+					var readyCheckProcessedList = new List<CorrelatedReadyCheckEntry>();
 					bool foundSelf = false;
 
 					//	Grab all of the alliance members here to make lookups easier since there's no function in client structs to get an alliance member by object ID.
-					Dictionary<UInt32, String> allianceMemberDict = new Dictionary<UInt32, string>();
+					Dictionary<UInt32, Tuple<UInt64, string>> allianceMemberDict = new Dictionary<UInt32, Tuple<UInt64, string>>();
 					for( int i = 0; i < 16; ++i )
 					{
 						var pGroupMember = FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->GetAllianceMemberByIndex( i );
@@ -204,7 +242,7 @@ namespace ReadyCheckHelper
 						{
 							string name = System.Text.Encoding.UTF8.GetString( pGroupMember->Name, 64 );    //***** TODO: How to get fixed buffer lenghth instead of magic numbering it here? *****
 							name = name.Substring( 0, name.IndexOf( '\0' ) );
-							allianceMemberDict.TryAdd( pGroupMember->ObjectID, name );
+							allianceMemberDict.TryAdd( pGroupMember->ObjectID, Tuple.Create( (UInt64)pGroupMember->ContentID, name ) );
 						}
 					}
 
@@ -223,45 +261,36 @@ namespace ReadyCheckHelper
 								//	If it's us, we need to use the first entry in the ready check data.
 								if( pFoundPartyMember->ObjectID == mClientState.LocalPlayer?.ObjectId )
 								{
-									readyCheckProcessedList.Insert( 0, Tuple.Create( name, readyCheckData[0].ReadyFlag ) );
+									readyCheckProcessedList.Insert( 0, new CorrelatedReadyCheckEntry( name, (UInt64)pFoundPartyMember->ContentID, pFoundPartyMember->ObjectID, readyCheckData[0].ReadyFlag ) );
 									foundSelf = true;
 								}
 								//	If it's before we've found ourselves, look ahead by one in the ready check data.
 								else if( !foundSelf )
 								{
-									readyCheckProcessedList.Add( Tuple.Create( name, readyCheckData[i+1].ReadyFlag ) );
+									readyCheckProcessedList.Add( new CorrelatedReadyCheckEntry( name, (UInt64)pFoundPartyMember->ContentID, pFoundPartyMember->ObjectID, readyCheckData[i+1].ReadyFlag ) );
 								}
 								//	Otherwise, use the same index in the ready check data.
 								else
 								{
-									readyCheckProcessedList.Add( Tuple.Create( name, readyCheckData[i].ReadyFlag ) );
+									readyCheckProcessedList.Add( new CorrelatedReadyCheckEntry( name, (UInt64)pFoundPartyMember->ContentID, pFoundPartyMember->ObjectID, readyCheckData[i].ReadyFlag ) );
 								}
 							}
 						}
 						//	For the alliance members, there should be object IDs to make matching easy.
 						else if( readyCheckData[i].ID > 0 && (readyCheckData[i].ID & 0xFFFFFFFF) != 0xE0000000 )
 						{
-							string name = "";
-							if( allianceMemberDict.TryGetValue( (uint)readyCheckData[i].ID, out name ) )
+							Tuple<UInt64, string> temp = null;
+							if( allianceMemberDict.TryGetValue( (uint)readyCheckData[i].ID, out temp ) )
 							{
-								readyCheckProcessedList.Add( Tuple.Create( name, readyCheckData[i].ReadyFlag ) );
+								readyCheckProcessedList.Add( new CorrelatedReadyCheckEntry( temp.Item2, temp.Item1, (UInt32)readyCheckData[i].ID, readyCheckData[i].ReadyFlag ) );
 							}
 						}
 						//***** TODO: How do things work if you're a non-cross-world alliance without people in the same zone? *****
 						//This isn't possible through PF; is it still possible in the open world?
 					}
 
-					var notReadyList = new List<String>();
-
-					foreach( var person in readyCheckProcessedList )
-					{
-						if( person.Item2 == MemoryHandler.ReadyCheckStateEnum.NotReady )
-						{
-							notReadyList.Add( person.Item1 );
-						}
-					}
-
-					ListUnreadyPlayersInChat( notReadyList );
+					//	Assign to the persistent list if we've gotten through this without any problems.
+					mProcessedReadyCheckData = readyCheckProcessedList;
 				}
 				catch( Exception e )
 				{
@@ -281,7 +310,7 @@ namespace ReadyCheckHelper
 				try
 				{
 					var readyCheckData = MemoryHandler.GetReadyCheckInfo();
-					var readyCheckProcessedList = new List<Tuple<String, MemoryHandler.ReadyCheckStateEnum>>();
+					var readyCheckProcessedList = new List<CorrelatedReadyCheckEntry>();
 
 					foreach( var readyCheckEntry in readyCheckData )
 					{
@@ -290,21 +319,12 @@ namespace ReadyCheckHelper
 						{
 							string name = System.Text.Encoding.UTF8.GetString( pFoundPartyMember->Name, 30 );   //***** TODO: Magic Number *****
 							name = name.Substring( 0, name.IndexOf( '\0' ) );
-							readyCheckProcessedList.Add( Tuple.Create( name, readyCheckEntry.ReadyFlag ) );
+							readyCheckProcessedList.Add( new CorrelatedReadyCheckEntry( name, pFoundPartyMember->ContentId, pFoundPartyMember->ObjectId, readyCheckEntry.ReadyFlag ) );
 						}
 					}
 
-					var notReadyList = new List<String>();
-
-					foreach( var person in readyCheckProcessedList )
-					{
-						if( person.Item2 == MemoryHandler.ReadyCheckStateEnum.NotReady )
-						{
-							notReadyList.Add( person.Item1 );
-						}
-					}
-
-					ListUnreadyPlayersInChat( notReadyList );
+					//	Assign to the persistent list if we've gotten through this without any problems.
+					mProcessedReadyCheckData = readyCheckProcessedList;
 				}
 				catch( Exception e )
 				{
@@ -382,7 +402,10 @@ namespace ReadyCheckHelper
 		protected const string mTextCommandName = "/pready";
 		private readonly Dalamud.Game.Text.SeStringHandling.Payloads.DalamudLinkPayload mOpenReadyCheckWindowLink;
 
+		protected List<CorrelatedReadyCheckEntry> mProcessedReadyCheckData;
+
 		protected DalamudPluginInterface mPluginInterface;
+		protected Framework mFramework;
 		protected ClientState mClientState;
 		protected CommandManager mCommandManager;
 		protected Condition mCondition;
@@ -392,5 +415,21 @@ namespace ReadyCheckHelper
 		protected DataManager mDataManager;
 		protected Configuration mConfiguration;
 		protected PluginUI mUI;
+
+		public struct CorrelatedReadyCheckEntry
+		{
+			public CorrelatedReadyCheckEntry( string name, UInt64 contentID, UInt32 objectID, MemoryHandler.ReadyCheckStateEnum readyState )
+			{
+				Name = name;
+				ContentID = contentID;
+				ObjectID = objectID;
+				ReadyState = readyState;
+			}
+
+			public string Name { get; private set; }
+			public UInt64 ContentID { get; private set; }
+			public UInt32 ObjectID { get; private set; }
+			public MemoryHandler.ReadyCheckStateEnum ReadyState { get; private set; }
+		}
 	}
 }
