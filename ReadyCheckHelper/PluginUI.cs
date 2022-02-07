@@ -13,6 +13,7 @@ using Dalamud.Plugin;
 using Dalamud.Data;
 using Dalamud.Game.Gui;
 using Dalamud.Interface;
+using Dalamud.Game;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
 
@@ -23,12 +24,14 @@ namespace ReadyCheckHelper
 	public class PluginUI : IDisposable
 	{
 		//	Construction
-		public PluginUI( DalamudPluginInterface pluginInterface, Configuration configuration, DataManager dataManager, GameGui gameGui )
+		public PluginUI( Plugin plugin, DalamudPluginInterface pluginInterface, Configuration configuration, DataManager dataManager, GameGui gameGui, SigScanner sigScanner )
 		{
+			mPlugin = plugin;
 			mPluginInterface = pluginInterface;
 			mConfiguration = configuration;
 			mDataManager = dataManager;
 			mGameGui = gameGui;
+			mHudManager = new HudManager( sigScanner );
 		}
 
 		//	Destruction
@@ -38,10 +41,12 @@ namespace ReadyCheckHelper
 			mUnknownStatusIconTexture?.Dispose();
 			mNotReadyIconTexture?.Dispose();
 			mReadyIconTexture?.Dispose();
+			mHudManager?.Dispose();
 			mReadyCheckIconTexture = null;
 			mUnknownStatusIconTexture = null;
 			mNotReadyIconTexture = null;
 			mReadyIconTexture = null;
+			mHudManager = null;
 		}
 
 		public void Initialize()
@@ -141,6 +146,7 @@ namespace ReadyCheckHelper
 						{
 							ImGui.Text( $"Number of Party Members (Group {i}): {FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.GetGroupMemberCount( i )}" );
 						}
+						ImGui.Text( $"Ready check is active: {mPlugin.ReadyCheckActive}" );
 						if( ImGui.Button( "Show/Hide Raw Readycheck Data" ) ) DebugRawWindowVisible = !DebugRawWindowVisible;
 						ImGui.Checkbox( "Debug Drawing on Party List", ref mDEBUG_DrawPlaceholderData );
 						ImGui.PushStyleColor( ImGuiCol.Text, 0xee4444ff );
@@ -296,35 +302,74 @@ namespace ReadyCheckHelper
 					var pPartyList = (AtkUnitBase*)mGameGui.GetAddonByName( "_PartyList", 1 );
 					var pAlliance1List = (AtkUnitBase*)mGameGui.GetAddonByName( "_AllianceList1", 1 );
 					var pAlliance2List = (AtkUnitBase*)mGameGui.GetAddonByName( "_AllianceList2", 1 );
-					//***** TODO: We need to handle the 48-man alliance window too. *****
+					var pCrossWorldAllianceList = (AtkUnitBase*)mGameGui.GetAddonByName( "Alliance48", 1 );
 
-					if( (IntPtr)pPartyList != IntPtr.Zero && pPartyList->IsVisible )
+					if( mDEBUG_DrawPlaceholderData )
 					{
-						if( mDEBUG_DrawPlaceholderData )
+						if( (IntPtr)pPartyList != IntPtr.Zero && pPartyList->IsVisible )
 						{
 							for( int i = 0; i < 8; ++i )
 							{
 								DrawOnPartyList( i, MemoryHandler.ReadyCheckStateEnum.Ready, pPartyList, ImGui.GetWindowDrawList() );
 							}
 						}
-					}
-					if( (IntPtr)pAlliance1List != IntPtr.Zero && pAlliance1List->IsVisible )
-					{
-						if( mDEBUG_DrawPlaceholderData )
+						if( (IntPtr)pAlliance1List != IntPtr.Zero && pAlliance1List->IsVisible )
 						{
 							for( int i = 0; i < 8; ++i )
 							{
 								DrawOnAllianceList( i, MemoryHandler.ReadyCheckStateEnum.Ready, pAlliance1List, ImGui.GetWindowDrawList() );
 							}
 						}
-					}
-					if( (IntPtr)pAlliance2List != IntPtr.Zero && pAlliance2List->IsVisible )
-					{
-						if( mDEBUG_DrawPlaceholderData )
+						if( (IntPtr)pAlliance2List != IntPtr.Zero && pAlliance2List->IsVisible )
 						{
 							for( int i = 0; i < 8; ++i )
 							{
 								DrawOnAllianceList( i, MemoryHandler.ReadyCheckStateEnum.Ready, pAlliance2List, ImGui.GetWindowDrawList() );
+							}
+						}
+						if( (IntPtr)pCrossWorldAllianceList != IntPtr.Zero && pCrossWorldAllianceList->IsVisible )
+						{
+							for( int j = 1; j < 6; ++j )
+							{
+								for( int i = 0; i < 8; ++i )
+								{
+									DrawOnCrossWorldAllianceList( j, i, MemoryHandler.ReadyCheckStateEnum.Ready, pCrossWorldAllianceList, ImGui.GetWindowDrawList() );
+								}
+							}
+						}
+					}
+					else
+					{
+						//***** TODO: For finding out order in the party list, use HudManager for regular parties/alliances.  Cross-world seem to be just the order that the proxy has them indexed, but verify this as much as possible. *****
+						if( (IntPtr)FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance() != IntPtr.Zero )
+						{
+							if( (IntPtr)FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance() != IntPtr.Zero )
+							{
+								var data = mPlugin.GetProcessedReadyCheckData();
+								if( data != null )
+								{
+									//	We're only in a crossworld party if the cross realm proxy says we are; however, it can say we're cross-realm when
+									//	we're in a regular party if we entered an instance as a cross-world party, so account for that too.
+									if( FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance()->IsCrossRealm > 0 &&
+										FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->MemberCount < 1 )
+									{
+										foreach( var result in data )
+										{
+											if( result.GroupIndex == 0 && (IntPtr)pPartyList != IntPtr.Zero && pPartyList->IsVisible )
+											{
+												DrawOnPartyList( result.MemberIndex, result.ReadyState, pPartyList, ImGui.GetWindowDrawList() );
+											}
+											else if( result.GroupIndex >= 1 && (IntPtr)pCrossWorldAllianceList != IntPtr.Zero && pCrossWorldAllianceList->IsVisible )
+											{
+												DrawOnCrossWorldAllianceList( result.GroupIndex, result.MemberIndex, result.ReadyState, pAlliance1List, ImGui.GetWindowDrawList() );
+											}
+										}
+									}
+									else
+									{
+
+									}
+								}
 							}
 						}
 					}
@@ -347,7 +392,7 @@ namespace ReadyCheckHelper
 				{
 					//***** TODO: Handle scaled party lists; just testing for now. *****
 					Vector2 iconOffset = new Vector2( -7, -5 );
-					Vector2 iconSize = new Vector2( pIconNode->Width / 4, pIconNode->Height / 4 );
+					Vector2 iconSize = new Vector2( pIconNode->Width / 3, pIconNode->Height / 3 );
 					Vector2 iconPos = new Vector2( pPartyList->X + pPartyMemberNode->AtkResNode.X + pIconNode->X + pIconNode->Width / 2, pPartyList->Y + pPartyMemberNode->AtkResNode.Y + pIconNode->Y + pIconNode->Height / 2 );
 					iconPos += iconOffset;
 
@@ -382,7 +427,7 @@ namespace ReadyCheckHelper
 				{
 					//***** TODO: Handle scaled party lists; just testing for now. *****
 					Vector2 iconOffset = new Vector2( -7, -5 );
-					Vector2 iconSize = new Vector2( pIconNode->Width / 4, pIconNode->Height / 4 );
+					Vector2 iconSize = new Vector2( pIconNode->Width / 3, pIconNode->Height / 3 );
 					Vector2 iconPos = new Vector2( pAllianceList->X + pAllianceMemberNode->AtkResNode.X + pIconNode->X + pIconNode->Width / 2, pAllianceList->Y + pAllianceMemberNode->AtkResNode.Y + pIconNode->Y + pIconNode->Height / 2 );
 					iconPos += iconOffset;
 
@@ -399,6 +444,48 @@ namespace ReadyCheckHelper
 					else if( readyCheckState != MemoryHandler.ReadyCheckStateEnum.CrossWorldMemberNotPresent )
 					{
 						drawList.AddImage( mUnknownStatusIconTexture.ImGuiHandle, iconPos, iconPos + iconSize );
+					}
+				}
+			}
+		}
+
+		unsafe protected void DrawOnCrossWorldAllianceList( int allianceIndex, int partyMemberIndex, MemoryHandler.ReadyCheckStateEnum readyCheckState, AtkUnitBase* pAllianceList, ImDrawListPtr drawList )
+		{
+			if( allianceIndex < 1 || allianceIndex > 5 ) return;
+			if( partyMemberIndex < 0 || partyMemberIndex > 7 ) return;
+			int allianceNodeIndex = 8 - allianceIndex;
+			int partyNodeIndex = 8 - partyMemberIndex;
+
+			var pAllianceNode = (AtkComponentNode*) pAllianceList->UldManager.NodeList[allianceNodeIndex];
+			if( (IntPtr)pAllianceNode != IntPtr.Zero )
+			{
+				var pPartyMemberNode = (AtkComponentNode*) pAllianceNode->Component->UldManager.NodeList[partyNodeIndex];
+				if( (IntPtr)pPartyMemberNode != IntPtr.Zero )
+				{
+					var pIconNode = pPartyMemberNode->Component->UldManager.NodeList[2];
+					if( (IntPtr)pIconNode != IntPtr.Zero )
+					{
+						//***** TODO: Handle scaled party lists; just testing for now. *****
+						Vector2 iconOffset = new Vector2( 0, 0 );
+						Vector2 iconSize = new Vector2( pIconNode->Width / 2, pIconNode->Height / 2 );
+						Vector2 iconPos = new Vector2(	pAllianceList->X + pAllianceNode->AtkResNode.X + pPartyMemberNode->AtkResNode.X + pIconNode->X + pIconNode->Width / 2,
+														pAllianceList->Y + pAllianceNode->AtkResNode.Y + pPartyMemberNode->AtkResNode.Y + pIconNode->Y + pIconNode->Height / 2 );
+						iconPos += iconOffset;
+
+						if( readyCheckState == MemoryHandler.ReadyCheckStateEnum.NotReady )
+						{
+							//drawList.AddImage( mNotReadyIconTexture.ImGuiHandle, iconPos, iconPos + iconSize );
+							drawList.AddImage( mReadyCheckIconTexture.ImGuiHandle, iconPos, iconPos + iconSize, new Vector2( 0.5f, 0.0f ), new Vector2( 1.0f ) );
+						}
+						else if( readyCheckState == MemoryHandler.ReadyCheckStateEnum.Ready )
+						{
+							//drawList.AddImage( mReadyIconTexture.ImGuiHandle, iconPos, iconPos + iconSize );
+							drawList.AddImage( mReadyCheckIconTexture.ImGuiHandle, iconPos, iconPos + iconSize, new Vector2( 0.0f, 0.0f ), new Vector2( 0.5f, 1.0f ) );
+						}
+						else if( readyCheckState != MemoryHandler.ReadyCheckStateEnum.CrossWorldMemberNotPresent )
+						{
+							drawList.AddImage( mUnknownStatusIconTexture.ImGuiHandle, iconPos, iconPos + iconSize );
+						}
 					}
 				}
 			}
@@ -423,10 +510,13 @@ namespace ReadyCheckHelper
 			ReadyCheckValid = false;
 		}
 
+		protected Plugin mPlugin;
 		protected DalamudPluginInterface mPluginInterface;
 		protected Configuration mConfiguration;
 		protected DataManager mDataManager;
 		protected GameGui mGameGui;
+
+		protected HudManager mHudManager;
 
 		protected Dictionary<uint, string> JobDict { get; set; } = new Dictionary<uint, string>();
 

@@ -55,7 +55,7 @@ namespace ReadyCheckHelper
 			} );
 
 			//	UI Initialization
-			mUI = new PluginUI( mPluginInterface, mConfiguration, mDataManager, mGameGui );
+			mUI = new PluginUI( this, mPluginInterface, mConfiguration, mDataManager, mGameGui, mSigScanner );
 			mPluginInterface.UiBuilder.Draw += DrawUI;
 			mPluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
 			//mUI.SetCurrentTerritoryTypeID( mClientState.TerritoryType );
@@ -63,14 +63,14 @@ namespace ReadyCheckHelper
 
 			//	Event Subscription
 			mFramework.Update += OnGameFrameworkUpdate;
-			MemoryHandler.ReadyCheckCompleteEvent += OnReadyCheckInitiated;
+			MemoryHandler.ReadyCheckInitiatedEvent += OnReadyCheckInitiated;
 			MemoryHandler.ReadyCheckCompleteEvent += OnReadyCheckCompleted;
 		}
 
 		//	Cleanup
 		public void Dispose()
 		{
-			MemoryHandler.ReadyCheckCompleteEvent -= OnReadyCheckInitiated;
+			MemoryHandler.ReadyCheckInitiatedEvent -= OnReadyCheckInitiated;
 			MemoryHandler.ReadyCheckCompleteEvent -= OnReadyCheckCompleted;
 			mFramework.Update -= OnGameFrameworkUpdate;
 			MemoryHandler.Uninit();
@@ -164,17 +164,19 @@ namespace ReadyCheckHelper
 
 		protected void OnGameFrameworkUpdate( Framework framework )
 		{
-			//***** TODO: Process the ready check data every frame if the flag is set to do so. *****
+			if( ReadyCheckActive ) ProcessReadyCheckResults();
 		}
 
 		protected void OnReadyCheckInitiated( object sender, System.EventArgs e )
 		{
-			//***** TODO: Set a flag to start processing the data every frame. *****
+			//	Flag that we should start processing the data every frame.
+			ReadyCheckActive = true;
 		}
 
 		protected void OnReadyCheckCompleted( object sender, System.EventArgs e )
 		{
-			//***** TODO: Unset flag to start processing the data every frame. *****
+			//	Flag that we don't need to keep updating.
+			ReadyCheckActive = false;
 
 			//	Process the data one last time to ensure that we have the latest results.
 			ProcessReadyCheckResults();
@@ -212,14 +214,6 @@ namespace ReadyCheckHelper
 						ProcessReadyCheckResults_Regular();
 					}
 				}
-				else
-				{
-					PluginLog.LogError( "Error in \"ProcessReadyCheckResults()\": The GroupManager instance pointer was null." );
-				}
-			}
-			else
-			{
-				PluginLog.LogError( "Error in \"ProcessReadyCheckResults()\": The InfoProxyCrossRealm instance pointer was null." );
 			}
 		}
 
@@ -234,7 +228,7 @@ namespace ReadyCheckHelper
 					bool foundSelf = false;
 
 					//	Grab all of the alliance members here to make lookups easier since there's no function in client structs to get an alliance member by object ID.
-					Dictionary<UInt32, Tuple<UInt64, string>> allianceMemberDict = new Dictionary<UInt32, Tuple<UInt64, string>>();
+					Dictionary<UInt32, Tuple<UInt64, string, byte, byte>> allianceMemberDict = new Dictionary<UInt32, Tuple<UInt64, string, byte, byte>>();
 					for( int i = 0; i < 16; ++i )
 					{
 						var pGroupMember = FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->GetAllianceMemberByIndex( i );
@@ -242,7 +236,7 @@ namespace ReadyCheckHelper
 						{
 							string name = System.Text.Encoding.UTF8.GetString( pGroupMember->Name, 64 );    //***** TODO: How to get fixed buffer lenghth instead of magic numbering it here? *****
 							name = name.Substring( 0, name.IndexOf( '\0' ) );
-							allianceMemberDict.TryAdd( pGroupMember->ObjectID, Tuple.Create( (UInt64)pGroupMember->ContentID, name ) );
+							allianceMemberDict.TryAdd( pGroupMember->ObjectID, Tuple.Create( (UInt64)pGroupMember->ContentID, name, (byte)( i / 8 ), (byte)( i % 8 ) ) );
 						}
 					}
 
@@ -261,28 +255,28 @@ namespace ReadyCheckHelper
 								//	If it's us, we need to use the first entry in the ready check data.
 								if( pFoundPartyMember->ObjectID == mClientState.LocalPlayer?.ObjectId )
 								{
-									readyCheckProcessedList.Insert( 0, new CorrelatedReadyCheckEntry( name, (UInt64)pFoundPartyMember->ContentID, pFoundPartyMember->ObjectID, readyCheckData[0].ReadyFlag ) );
+									readyCheckProcessedList.Insert( 0, new CorrelatedReadyCheckEntry( name, (UInt64)pFoundPartyMember->ContentID, pFoundPartyMember->ObjectID, readyCheckData[0].ReadyFlag, 0, 0 ) );
 									foundSelf = true;
 								}
 								//	If it's before we've found ourselves, look ahead by one in the ready check data.
 								else if( !foundSelf )
 								{
-									readyCheckProcessedList.Add( new CorrelatedReadyCheckEntry( name, (UInt64)pFoundPartyMember->ContentID, pFoundPartyMember->ObjectID, readyCheckData[i+1].ReadyFlag ) );
+									readyCheckProcessedList.Add( new CorrelatedReadyCheckEntry( name, (UInt64)pFoundPartyMember->ContentID, pFoundPartyMember->ObjectID, readyCheckData[i+1].ReadyFlag, 0, (byte)(i + 1) ) );
 								}
 								//	Otherwise, use the same index in the ready check data.
 								else
 								{
-									readyCheckProcessedList.Add( new CorrelatedReadyCheckEntry( name, (UInt64)pFoundPartyMember->ContentID, pFoundPartyMember->ObjectID, readyCheckData[i].ReadyFlag ) );
+									readyCheckProcessedList.Add( new CorrelatedReadyCheckEntry( name, (UInt64)pFoundPartyMember->ContentID, pFoundPartyMember->ObjectID, readyCheckData[i].ReadyFlag, 0, (byte)i ) );
 								}
 							}
 						}
 						//	For the alliance members, there should be object IDs to make matching easy.
 						else if( readyCheckData[i].ID > 0 && (readyCheckData[i].ID & 0xFFFFFFFF) != 0xE0000000 )
 						{
-							Tuple<UInt64, string> temp = null;
+							Tuple<UInt64, string, byte, byte> temp = null;
 							if( allianceMemberDict.TryGetValue( (uint)readyCheckData[i].ID, out temp ) )
 							{
-								readyCheckProcessedList.Add( new CorrelatedReadyCheckEntry( temp.Item2, temp.Item1, (UInt32)readyCheckData[i].ID, readyCheckData[i].ReadyFlag ) );
+								readyCheckProcessedList.Add( new CorrelatedReadyCheckEntry( temp.Item2, temp.Item1, (UInt32)readyCheckData[i].ID, readyCheckData[i].ReadyFlag, temp.Item3, temp.Item4 ) );
 							}
 						}
 						//***** TODO: How do things work if you're a non-cross-world alliance without people in the same zone? *****
@@ -294,12 +288,8 @@ namespace ReadyCheckHelper
 				}
 				catch( Exception e )
 				{
-					PluginLog.LogError( $"Exception caught in \"ProcessReadyCheckResults_Regular()\": {e}." );
+					PluginLog.LogDebug( $"Exception caught in \"ProcessReadyCheckResults_Regular()\": {e}." );
 				}
-			}
-			else
-			{
-				PluginLog.LogError( "Error in \"ProcessReadyCheckResults_Regular()\": The GroupManager instance pointer was null." );
 			}
 		}
 
@@ -319,7 +309,7 @@ namespace ReadyCheckHelper
 						{
 							string name = System.Text.Encoding.UTF8.GetString( pFoundPartyMember->Name, 30 );   //***** TODO: Magic Number *****
 							name = name.Substring( 0, name.IndexOf( '\0' ) );
-							readyCheckProcessedList.Add( new CorrelatedReadyCheckEntry( name, pFoundPartyMember->ContentId, pFoundPartyMember->ObjectId, readyCheckEntry.ReadyFlag ) );
+							readyCheckProcessedList.Add( new CorrelatedReadyCheckEntry( name, pFoundPartyMember->ContentId, pFoundPartyMember->ObjectId, readyCheckEntry.ReadyFlag, pFoundPartyMember->GroupIndex, pFoundPartyMember->MemberIndex ) );
 						}
 					}
 
@@ -328,12 +318,8 @@ namespace ReadyCheckHelper
 				}
 				catch( Exception e )
 				{
-					PluginLog.LogError( $"Exception caught in \"ProcessReadyCheckResults_CrossWorld()\": {e}." );
+					PluginLog.LogDebug( $"Exception caught in \"ProcessReadyCheckResults_CrossWorld()\": {e}." );
 				}
-			}
-			else
-			{
-				PluginLog.LogError( "Error in \"ProcessReadyCheckResults_CrossWorld()\": The InfoProxyCrossRealm instance pointer was null." );
 			}
 		}
 
@@ -394,8 +380,13 @@ namespace ReadyCheckHelper
 
 		protected void ShowBestAvailableReadyCheckWindow()
 		{
-			//***** TODO: Show built in ready check window if it's still available; otherwise show a reconstruction through ImGui. *****
+			//***** TODO: Show built in ready check window if it's still available; otherwise show a reconstruction through ImGui.  The addon doesn't exist unless it's opened, so this might be difficult. *****
 			mChatGui.Print( "TODO: Handle link." );
+		}
+
+		public List<CorrelatedReadyCheckEntry> GetProcessedReadyCheckData()
+		{
+			return mProcessedReadyCheckData != null ? new List<CorrelatedReadyCheckEntry>( mProcessedReadyCheckData ) : null;
 		}
 
 		public string Name => "ReadyCheckHelper";
@@ -403,6 +394,7 @@ namespace ReadyCheckHelper
 		private readonly Dalamud.Game.Text.SeStringHandling.Payloads.DalamudLinkPayload mOpenReadyCheckWindowLink;
 
 		protected List<CorrelatedReadyCheckEntry> mProcessedReadyCheckData;
+		public bool ReadyCheckActive { get; protected set; } = false;
 
 		protected DalamudPluginInterface mPluginInterface;
 		protected Framework mFramework;
@@ -418,18 +410,22 @@ namespace ReadyCheckHelper
 
 		public struct CorrelatedReadyCheckEntry
 		{
-			public CorrelatedReadyCheckEntry( string name, UInt64 contentID, UInt32 objectID, MemoryHandler.ReadyCheckStateEnum readyState )
+			public CorrelatedReadyCheckEntry( string name, UInt64 contentID, UInt32 objectID, MemoryHandler.ReadyCheckStateEnum readyState, byte groupIndex, byte memberIndex )
 			{
 				Name = name;
 				ContentID = contentID;
 				ObjectID = objectID;
 				ReadyState = readyState;
+				GroupIndex = groupIndex;
+				MemberIndex = memberIndex;
 			}
 
 			public string Name { get; private set; }
 			public UInt64 ContentID { get; private set; }
 			public UInt32 ObjectID { get; private set; }
 			public MemoryHandler.ReadyCheckStateEnum ReadyState { get; private set; }
+			public byte GroupIndex { get; private set; }
+			public byte MemberIndex { get; private set; }
 		}
 	}
 }
