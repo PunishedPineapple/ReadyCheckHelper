@@ -39,13 +39,9 @@ namespace ReadyCheckHelper
 		{
 			mReadyCheckIconTexture?.Dispose();
 			mUnknownStatusIconTexture?.Dispose();
-			mNotReadyIconTexture?.Dispose();
-			mReadyIconTexture?.Dispose();
 			mHudManager?.Dispose();
 			mReadyCheckIconTexture = null;
 			mUnknownStatusIconTexture = null;
-			mNotReadyIconTexture = null;
-			mReadyIconTexture = null;
 			mHudManager = null;
 		}
 
@@ -59,8 +55,6 @@ namespace ReadyCheckHelper
 
 			mReadyCheckIconTexture		??= mDataManager.GetImGuiTexture( "ui/uld/ReadyCheck_hr1.tex" ) ?? mDataManager.GetImGuiTexture( "ui/uld/ReadyCheck.tex" );
 			mUnknownStatusIconTexture	??= mDataManager.GetImGuiTextureIcon( 061504 );
-			mNotReadyIconTexture		??= mDataManager.GetImGuiTextureIcon( 061504 );
-			mReadyIconTexture			??= mDataManager.GetImGuiTextureIcon( 061504 );
 		}
 
 		public void Draw()
@@ -71,10 +65,7 @@ namespace ReadyCheckHelper
 			DrawDebugRawWindow();
 
 			//	Draw other UI stuff.
-			if( mConfiguration.ShowReadyCheckOnPartyAllianceList )
-			{
-				DrawOnPartyAllianceLists();
-			}
+			DrawOnPartyAllianceLists();
 		}
 
 		protected void DrawSettingsWindow()
@@ -284,7 +275,7 @@ namespace ReadyCheckHelper
 
 		unsafe protected void DrawOnPartyAllianceLists()
 		{
-			if( mGameGui != null )
+			if( mConfiguration.ShowReadyCheckOnPartyAllianceList && mGameGui != null )
 			{
 				const ImGuiWindowFlags flags =	ImGuiWindowFlags.NoDecoration |
 												ImGuiWindowFlags.NoSavedSettings |
@@ -340,7 +331,7 @@ namespace ReadyCheckHelper
 					}
 					else
 					{
-						//***** TODO: For finding out order in the party list, use HudManager for regular parties/alliances.  Cross-world seem to be just the order that the proxy has them indexed, but verify this as much as possible. *****
+						//	For finding out order in the party list, use HudManager for regular parties/alliances.  Cross-world seems to be just the order that the proxy has them indexed.
 						if( (IntPtr)FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance() != IntPtr.Zero )
 						{
 							if( (IntPtr)FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance() != IntPtr.Zero )
@@ -540,8 +531,6 @@ namespace ReadyCheckHelper
 
 		protected TextureWrap mReadyCheckIconTexture = null;
 		protected TextureWrap mUnknownStatusIconTexture = null;
-		protected TextureWrap mNotReadyIconTexture = null;
-		protected TextureWrap mReadyIconTexture = null;
 
 		protected bool ReadyCheckValid { get; set; }
 		protected bool mDEBUG_DrawPlaceholderData = false;

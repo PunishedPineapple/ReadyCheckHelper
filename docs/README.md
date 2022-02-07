@@ -15,5 +15,11 @@ Not Ready: Cloud Strife, Terra Branford, Zidane Tribal, and two others.
 ```
 You can configure the number of names shown before you get an "and \<x\> others" in the settings window for the plugin.
 
+It can also display the ready check flags on the party/alliance lists in realtime during a ready check like this:
+
+[![Screenshot](Images/image2.png)](Images/image2.png?raw=true)
+
+This feature can be turned on or off in the plugin config.  Please note that until you respond to a ready check, the icons on your party/alliance list may not be updated.  This is a limitation of how the game handles ready checks, and I don't think that I can do anything about it.
+
 ## License
 Code and executable are covered under the [MIT License](../LICENSE).  Final Fantasy XIV (and any associated data used by this plugin) is owned by and copyright Square Enix.  Plugin icon modified from https://thenounproject.com/icon/people-1350210/ by b farias.
