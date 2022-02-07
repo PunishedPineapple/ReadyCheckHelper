@@ -367,7 +367,25 @@ namespace ReadyCheckHelper
 									}
 									else
 									{
-
+										foreach( var result in data )
+										{
+											var group = mHudManager.FindGroupMemberById( result.ObjectID );
+											if( group != null )
+											{
+												if( group.Value.groupIdx == 0 && (IntPtr)pPartyList != IntPtr.Zero && pPartyList->IsVisible )
+												{
+													DrawOnPartyList( group.Value.idx, result.ReadyState, pPartyList, ImGui.GetWindowDrawList() );
+												}
+												else if( group.Value.groupIdx == 1 && (IntPtr)pAlliance1List != IntPtr.Zero && pAlliance1List->IsVisible )
+												{
+													DrawOnAllianceList( group.Value.idx, result.ReadyState, pAlliance1List, ImGui.GetWindowDrawList() );
+												}
+												else if( group.Value.groupIdx == 2 && (IntPtr)pAlliance2List != IntPtr.Zero && pAlliance2List->IsVisible )
+												{
+													DrawOnAllianceList( group.Value.idx, result.ReadyState, pAlliance2List, ImGui.GetWindowDrawList() );
+												}
+											}
+										}
 									}
 								}
 							}
