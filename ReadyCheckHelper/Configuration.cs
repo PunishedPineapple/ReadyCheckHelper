@@ -36,6 +36,27 @@ namespace ReadyCheckHelper
 			set { mShowReadyCheckOnPartyAllianceList = value; }
 		}
 
+		public bool mClearReadyCheckOverlayEnteringInstance = true;
+		public bool ClearReadyCheckOverlayEnteringInstance
+		{
+			get { return mClearReadyCheckOverlayEnteringInstance; }
+			set { mClearReadyCheckOverlayEnteringInstance = value; }
+		}
+
+		public bool mClearReadyCheckOverlayInCombat = false;
+		public bool ClearReadyCheckOverlayInCombat
+		{
+			get { return mClearReadyCheckOverlayInCombat; }
+			set { mClearReadyCheckOverlayInCombat = value; }
+		}
+
+		public bool mClearReadyCheckOverlayInCombatInInstancedCombat = true;
+		public bool ClearReadyCheckOverlayInCombatInInstancedCombat
+		{
+			get { return mClearReadyCheckOverlayInCombatInInstancedCombat; }
+			set { mClearReadyCheckOverlayInCombatInInstancedCombat = value; }
+		}
+
 		//  Plugin framework and related convenience functions below.
 		public void Initialize( DalamudPluginInterface pluginInterface )
 		{

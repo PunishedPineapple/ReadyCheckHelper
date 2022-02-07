@@ -10,6 +10,9 @@ using Dalamud.Game.Gui;
 using Dalamud.Game;
 using Dalamud.Data;
 using Dalamud.Logging;
+using Lumina.Excel;
+using Lumina.Excel.GeneratedSheets;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace ReadyCheckHelper
 {
@@ -21,7 +24,7 @@ namespace ReadyCheckHelper
 			Framework framework,
 			ClientState clientState,
 			CommandManager commandManager,
-			Condition condition,
+			Dalamud.Game.ClientState.Conditions.Condition condition,
 			ChatGui chatGui,
 			GameGui gameGui,
 			DataManager dataManager,
@@ -58,10 +61,15 @@ namespace ReadyCheckHelper
 			mUI = new PluginUI( this, mPluginInterface, mConfiguration, mDataManager, mGameGui, mSigScanner );
 			mPluginInterface.UiBuilder.Draw += DrawUI;
 			mPluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
-			//mUI.SetCurrentTerritoryTypeID( mClientState.TerritoryType );
+			CurrentTerritoryTypeID = mClientState.TerritoryType;
 			mUI.Initialize();
 
+			//	Misc.
+			PopulateInstancedTerritoriesList();
+
 			//	Event Subscription
+			mCondition.ConditionChange += OnConditionChanged;
+			mClientState.TerritoryChanged += OnTerritoryChanged;
 			mFramework.Update += OnGameFrameworkUpdate;
 			MemoryHandler.ReadyCheckInitiatedEvent += OnReadyCheckInitiated;
 			MemoryHandler.ReadyCheckCompleteEvent += OnReadyCheckCompleted;
@@ -73,12 +81,15 @@ namespace ReadyCheckHelper
 			MemoryHandler.ReadyCheckInitiatedEvent -= OnReadyCheckInitiated;
 			MemoryHandler.ReadyCheckCompleteEvent -= OnReadyCheckCompleted;
 			mFramework.Update -= OnGameFrameworkUpdate;
+			mClientState.TerritoryChanged -= OnTerritoryChanged;
+			mCondition.ConditionChange -= OnConditionChanged;
 			MemoryHandler.Uninit();
 			mUI.Dispose();
 			mPluginInterface.UiBuilder.Draw -= DrawUI;
 			mPluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
 			mPluginInterface.RemoveChatLinkHandler();
 			mCommandManager.RemoveHandler( mTextCommandName );
+			mInstancedTerritories.Clear();
 		}
 
 		//	Text Commands
@@ -119,6 +130,10 @@ namespace ReadyCheckHelper
 			{
 				mUI.DebugWindowVisible = !mUI.DebugWindowVisible;
 			}
+			else if( subCommand.ToLower() == "results" )
+			{
+				mUI.ReadyCheckResultsWindowVisible = !mUI.ReadyCheckResultsWindowVisible;
+			}
 			else if( subCommand.ToLower() == "help" || subCommand.ToLower() == "?" )
 			{
 				commandResponse = ProcessTextCommand_Help( subCommandArgs );
@@ -142,13 +157,17 @@ namespace ReadyCheckHelper
 			{
 				return "Opens the settings window.";
 			}
+			else if( args.ToLower() == "results" )
+			{
+				return "Opens a window containing the results of the last ready check to occur.";
+			}
 			else if( args.ToLower() == "debug" )
 			{
 				return "Opens a window containing party and ready check object data.";
 			}
 			else
 			{
-				return "Use \"/pready config\" to open the the configuration window.";
+				return "Use \"/pready config\" to open the the configuration window or \"/pready results\" to open a window with the most recent ready check results.";
 			}
 		}
 
@@ -171,12 +190,14 @@ namespace ReadyCheckHelper
 		{
 			//	Flag that we should start processing the data every frame.
 			ReadyCheckActive = true;
+			mUI.ShowReadyCheckOverlay();
 		}
 
 		protected void OnReadyCheckCompleted( object sender, System.EventArgs e )
 		{
 			//	Flag that we don't need to keep updating.
 			ReadyCheckActive = false;
+			mUI.ShowReadyCheckOverlay();
 
 			//	Process the data one last time to ensure that we have the latest results.
 			ProcessReadyCheckResults();
@@ -380,8 +401,41 @@ namespace ReadyCheckHelper
 
 		protected void ShowBestAvailableReadyCheckWindow()
 		{
-			//***** TODO: Show built in ready check window if it's still available; otherwise show a reconstruction through ImGui.  The addon doesn't exist unless it's opened, so this might be difficult. *****
-			mChatGui.Print( "TODO: Handle link." );
+			unsafe
+			{
+				var pReadyCheckNotification = (AtkUnitBase*)mGameGui.GetAddonByName( "_NotificationReadyCheck", 1 );
+				if( false /*(IntPtr)pReadyCheckNotification != IntPtr.Zero && pReadyCheckNotification->IsVisible*/ )
+				{
+					//***** TODO: Try to show built in ready check window.  The addon doesn't exist unless it's opened, so this might be difficult. *****
+				}
+				else
+				{
+					mUI.ReadyCheckResultsWindowVisible = true;
+				}
+			}
+		}
+
+		protected void OnConditionChanged( ConditionFlag flag, bool value )
+		{
+			if( flag == ConditionFlag.InCombat )
+			{
+				if( value )
+				{
+					if( mConfiguration.ClearReadyCheckOverlayInCombat )
+					{
+						mUI.InvalidateReadyCheck();
+					}
+					else if( mConfiguration.ClearReadyCheckOverlayInCombatInInstancedCombat && mInstancedTerritories.Contains( mClientState.TerritoryType ) )
+					{
+						mUI.InvalidateReadyCheck();
+					}
+				}
+			}
+		}
+
+		protected void OnTerritoryChanged( object sender, UInt16 ID )
+		{
+			if( mConfiguration.ClearReadyCheckOverlayEnteringInstance && mInstancedTerritories.Contains( ID ) ) mUI.InvalidateReadyCheck();
 		}
 
 		public List<CorrelatedReadyCheckEntry> GetProcessedReadyCheckData()
@@ -389,10 +443,18 @@ namespace ReadyCheckHelper
 			return mProcessedReadyCheckData != null ? new List<CorrelatedReadyCheckEntry>( mProcessedReadyCheckData ) : null;
 		}
 
+		protected void PopulateInstancedTerritoriesList()
+		{
+			ExcelSheet<ContentFinderCondition> contentFinderSheet = mDataManager.GetExcelSheet<ContentFinderCondition>();
+			foreach( var zone in contentFinderSheet ) mInstancedTerritories.Add( zone.TerritoryType.Row );
+		}
+
 		public string Name => "ReadyCheckHelper";
 		protected const string mTextCommandName = "/pready";
 		private readonly Dalamud.Game.Text.SeStringHandling.Payloads.DalamudLinkPayload mOpenReadyCheckWindowLink;
 
+		public UInt16 CurrentTerritoryTypeID { get; protected set; }
+		protected List<UInt32> mInstancedTerritories = new List<UInt32>();
 		protected List<CorrelatedReadyCheckEntry> mProcessedReadyCheckData;
 		public bool ReadyCheckActive { get; protected set; } = false;
 
@@ -400,7 +462,7 @@ namespace ReadyCheckHelper
 		protected Framework mFramework;
 		protected ClientState mClientState;
 		protected CommandManager mCommandManager;
-		protected Condition mCondition;
+		protected Dalamud.Game.ClientState.Conditions.Condition mCondition;
 		protected ChatGui mChatGui;
 		protected GameGui mGameGui;
 		protected SigScanner mSigScanner;

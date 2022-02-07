@@ -1,7 +1,4 @@
-﻿General:
--See if we can find a function for ready check data sent or something so we can know that a ready check is going on and the data is valid before it completes for the non-initiator.
-
-Maybe:
+﻿Maybe:
 -Check food durations for synced Extremes, Savages, and Ultimates when ready checking.
 
 Bugs:
@@ -10,14 +7,12 @@ Bugs:
 
 Priority:
 	Drawing on party/alliance lists:
-		-Pass in correlated/processed/sorted ready check info.
-		-Determine which player corresponds to which party/alliance list index.
+		-Figure out why in-instance alliances aren't drawing.
+		-Add option to dirty the ready check and remove it from the party list after a set period of time
+		-Dirty the data when the party changes.
 
 	Debug stuff:
 		-Add rest of ready check object bytes to raw debug window.
 
-	Text info:
-		-Check and hook up text link handler.
-
 	Misc:
-		-Add a basic ready check results window to bring up when the in-game one isn't available.
+		-Figure out if/how we can show the game's ready check window from the text link.

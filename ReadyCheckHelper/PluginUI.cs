@@ -61,6 +61,7 @@ namespace ReadyCheckHelper
 		{
 			//	Draw the sub-windows.
 			DrawSettingsWindow();
+			DrawReadyCheckResultsWindow();
 			DrawDebugWindow();
 			DrawDebugRawWindow();
 
@@ -75,13 +76,32 @@ namespace ReadyCheckHelper
 				return;
 			}
 
-			ImGui.SetNextWindowSize( new Vector2( 430, 170 ) * ImGui.GetIO().FontGlobalScale );
 			if( ImGui.Begin( "Ready Check Helper Settings", ref mSettingsWindowVisible,
-				ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse ) )
+				ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse ) )
 			{
 				ImGui.Text( "Maximum number of names to show in chat:" );
 				ImGui.SliderInt( "##MaxUnreadyNamesToShowInChat", ref mConfiguration.mMaxUnreadyToListInChat, 1, 48 );
+
+				ImGui.Spacing();
+				ImGui.Spacing();
+				ImGui.Spacing();
+				ImGui.Spacing();
+				ImGui.Spacing();
+
 				ImGui.Checkbox( "Draw ready check on party/alliance lists.", ref mConfiguration.mShowReadyCheckOnPartyAllianceList );
+
+				ImGui.Spacing();
+				ImGui.Spacing();
+				ImGui.Spacing();
+				ImGui.Spacing();
+				ImGui.Spacing();
+
+				ImGui.Text( "Clear ready check from party/alliance lists:" );
+				ImGui.Indent();
+				ImGui.Checkbox( "Upon entering combat.", ref mConfiguration.mClearReadyCheckOverlayInCombat );
+				ImGui.Checkbox( "Upon entering instance.", ref mConfiguration.mClearReadyCheckOverlayEnteringInstance );
+				ImGui.Checkbox( "Upon entering combat while in instance.", ref mConfiguration.mClearReadyCheckOverlayInCombatInInstancedCombat );
+				ImGui.Unindent();
 
 				ImGui.Spacing();
 				ImGui.Spacing();
@@ -93,6 +113,75 @@ namespace ReadyCheckHelper
 				{
 					mConfiguration.Save();
 					SettingsWindowVisible = false;
+				}
+			}
+
+			ImGui.End();
+		}
+
+		protected void DrawReadyCheckResultsWindow()
+		{
+			if( !ReadyCheckResultsWindowVisible )
+			{
+				return;
+			}
+
+			ImGui.SetNextWindowSizeConstraints( new Vector2( 180, 100 ) * ImGui.GetIO().FontGlobalScale, new Vector2( float.MaxValue, float.MaxValue ) );
+			if( ImGui.Begin( "Latest Ready Check Results", ref mReadyCheckResultsWindowVisible,
+				ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse ) )
+			{
+				var list = mPlugin.GetProcessedReadyCheckData();
+				if( list != null )
+				{
+					//	We have to sort and reorganize this yet again because of how ImGui tables work ;_;
+					list.Sort( ( a, b ) => a.GroupIndex.CompareTo( b.GroupIndex ) );
+					var tableList = new List<List<Plugin.CorrelatedReadyCheckEntry>>();
+					foreach( var player in list )
+					{
+						if( tableList.Count <= player.GroupIndex )
+						{
+							tableList.Add( new List<Plugin.CorrelatedReadyCheckEntry>() );
+						}
+						tableList[player.GroupIndex].Add( player );
+					}
+
+					if( ImGui.BeginTable( "LatestReadyCheckResultsTable", tableList.Count ) )
+					{
+						foreach( var group in tableList )
+						{
+							ImGui.TableNextRow();
+							foreach( var player in group )
+							{
+								ImGui.TableNextColumn();
+								if( player.ReadyState == MemoryHandler.ReadyCheckStateEnum.Ready )
+								{
+									ImGui.Image( mReadyCheckIconTexture.ImGuiHandle, new Vector2( 24 ), new Vector2( 0.0f ), new Vector2( 0.5f, 1.0f ) );
+								}
+								else if( player.ReadyState == MemoryHandler.ReadyCheckStateEnum.NotReady )
+								{
+									ImGui.Image( mReadyCheckIconTexture.ImGuiHandle, new Vector2( 24 ), new Vector2( 0.5f, 0.0f ), new Vector2( 1.0f ) );
+								}
+								else
+								{
+									ImGui.Image( mUnknownStatusIconTexture.ImGuiHandle, new Vector2( 24 ), new Vector2( 0.5f, 0.0f ), new Vector2( 1.0f ), new Vector4( 0.0f ) );
+								}
+								ImGui.SameLine();
+								ImGui.Text( player.Name );
+							}
+						}
+						ImGui.EndTable();
+					}
+				}
+
+				ImGui.Spacing();
+				ImGui.Spacing();
+				ImGui.Spacing();
+				ImGui.Spacing();
+				ImGui.Spacing();
+
+				if( ImGui.Button( "Close" ) )
+				{
+					ReadyCheckResultsWindowVisible = false;
 				}
 			}
 
@@ -150,7 +239,7 @@ namespace ReadyCheckHelper
 							bool isValidPointer = IntPtr.TryParse( mDEBUG_ReadyCheckObjectAddressInputString, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out ptr );
 							if( isValidPointer ) MemoryHandler.DEBUG_SetReadyCheckObjectAddress( ptr );
 						}
-						ImGui.PopStyleColor(); ;
+						ImGui.PopStyleColor();
 						ImGui.NextColumn();
 						ImGui.Text( "Ready Check Data:" );
 						for( int i = 0; i < readyCheckdata.Length; ++i )
@@ -275,7 +364,7 @@ namespace ReadyCheckHelper
 
 		unsafe protected void DrawOnPartyAllianceLists()
 		{
-			if( mConfiguration.ShowReadyCheckOnPartyAllianceList && mGameGui != null )
+			if( mConfiguration.ShowReadyCheckOnPartyAllianceList && ReadyCheckValid && mGameGui != null )
 			{
 				const ImGuiWindowFlags flags =	ImGuiWindowFlags.NoDecoration |
 												ImGuiWindowFlags.NoSavedSettings |
@@ -514,7 +603,12 @@ namespace ReadyCheckHelper
 			}
 		}
 
-		protected void InvalidateReadyCheck()
+		public void ShowReadyCheckOverlay()
+		{
+			ReadyCheckValid = true;
+		}
+
+		public void InvalidateReadyCheck()
 		{
 			ReadyCheckValid = false;
 		}
@@ -542,6 +636,13 @@ namespace ReadyCheckHelper
 		{
 			get { return mSettingsWindowVisible; }
 			set { mSettingsWindowVisible = value; }
+		}
+
+		protected bool mReadyCheckResultsWindowVisible = false;
+		public bool ReadyCheckResultsWindowVisible
+		{
+			get { return mReadyCheckResultsWindowVisible; }
+			set { mReadyCheckResultsWindowVisible = value; }
 		}
 
 		protected bool mDebugWindowVisible = false;
