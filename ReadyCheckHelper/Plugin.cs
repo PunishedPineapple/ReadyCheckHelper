@@ -61,7 +61,6 @@ namespace ReadyCheckHelper
 			mUI = new PluginUI( this, mPluginInterface, mConfiguration, mDataManager, mGameGui, mSigScanner );
 			mPluginInterface.UiBuilder.Draw += DrawUI;
 			mPluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
-			CurrentTerritoryTypeID = mClientState.TerritoryType;
 			mUI.Initialize();
 
 			//	Misc.
@@ -453,7 +452,6 @@ namespace ReadyCheckHelper
 		protected const string mTextCommandName = "/pready";
 		private readonly Dalamud.Game.Text.SeStringHandling.Payloads.DalamudLinkPayload mOpenReadyCheckWindowLink;
 
-		public UInt16 CurrentTerritoryTypeID { get; protected set; }
 		protected List<UInt32> mInstancedTerritories = new List<UInt32>();
 		protected List<CorrelatedReadyCheckEntry> mProcessedReadyCheckData;
 		public bool ReadyCheckActive { get; protected set; } = false;
