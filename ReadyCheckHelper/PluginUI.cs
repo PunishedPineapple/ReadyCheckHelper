@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
-using System.Runtime.InteropServices;
 using System.Linq;
 using System.Globalization;
+using System.IO;
 
 using ImGuiNET;
 using ImGuiScene;
@@ -15,6 +15,7 @@ using Dalamud.Game.Gui;
 using Dalamud.Interface;
 using Dalamud.Game;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using CheapLoc;
 
 
 namespace ReadyCheckHelper
@@ -39,9 +40,11 @@ namespace ReadyCheckHelper
 		{
 			mReadyCheckIconTexture?.Dispose();
 			mUnknownStatusIconTexture?.Dispose();
+			mNotPresentIconTexture?.Dispose();
 			mHudManager?.Dispose();
 			mReadyCheckIconTexture = null;
 			mUnknownStatusIconTexture = null;
+			mNotPresentIconTexture = null;
 			mHudManager = null;
 		}
 
@@ -54,7 +57,8 @@ namespace ReadyCheckHelper
 			}
 
 			mReadyCheckIconTexture		??= mDataManager.GetImGuiTexture( "ui/uld/ReadyCheck_hr1.tex" ) ?? mDataManager.GetImGuiTexture( "ui/uld/ReadyCheck.tex" );
-			mUnknownStatusIconTexture	??= mDataManager.GetImGuiTextureIcon( 061504 );
+			mUnknownStatusIconTexture	??= mDataManager.GetImGuiTextureIcon( 60072 );
+			mNotPresentIconTexture		??= mDataManager.GetImGuiTextureIcon( 61504 );
 		}
 
 		public void Draw()
@@ -76,10 +80,10 @@ namespace ReadyCheckHelper
 				return;
 			}
 
-			if( ImGui.Begin( "Ready Check Helper Settings", ref mSettingsWindowVisible,
+			if( ImGui.Begin( Loc.Localize( "Window Title: Config", "Ready Check Helper Settings" ) + "###Ready Check Helper Settings", ref mSettingsWindowVisible,
 				ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse ) )
 			{
-				ImGui.Text( "Maximum number of names to show in chat:" );
+				ImGui.Text( Loc.Localize( "Config Option: Max Names in Chat", "Maximum number of names to show in chat:" ) );
 				ImGui.SliderInt( "##MaxUnreadyNamesToShowInChat", ref mConfiguration.mMaxUnreadyToListInChat, 1, 48 );
 
 				ImGui.Spacing();
@@ -88,7 +92,7 @@ namespace ReadyCheckHelper
 				ImGui.Spacing();
 				ImGui.Spacing();
 
-				ImGui.Checkbox( "Draw ready check on party/alliance lists.", ref mConfiguration.mShowReadyCheckOnPartyAllianceList );
+				ImGui.Checkbox( Loc.Localize( "Config Option: Draw on Party Alliance Lists", "Draw ready check on party/alliance lists." ) + "###Draw ready check on party/alliance lists.", ref mConfiguration.mShowReadyCheckOnPartyAllianceList );
 
 				ImGui.Spacing();
 				ImGui.Spacing();
@@ -96,11 +100,11 @@ namespace ReadyCheckHelper
 				ImGui.Spacing();
 				ImGui.Spacing();
 
-				ImGui.Text( "Clear ready check from party/alliance lists:" );
+				ImGui.Text( Loc.Localize( "Config Option: Clear Party Alliance List Settings", "Clear ready check from party/alliance lists:" ) );
 				ImGui.Indent();
-				ImGui.Checkbox( "Upon entering combat.", ref mConfiguration.mClearReadyCheckOverlayInCombat );
-				ImGui.Checkbox( "Upon entering instance.", ref mConfiguration.mClearReadyCheckOverlayEnteringInstance );
-				ImGui.Checkbox( "Upon entering combat while in instance.", ref mConfiguration.mClearReadyCheckOverlayInCombatInInstancedCombat );
+				ImGui.Checkbox( Loc.Localize( "Config Option: Clear Party Alliance List upon Entering Combat", "Upon entering combat." ) + "###Upon entering combat.", ref mConfiguration.mClearReadyCheckOverlayInCombat );
+				ImGui.Checkbox( Loc.Localize( "Config Option: Clear Party Alliance List upon Entering Instance", "Upon entering instance." ) + "###Upon entering instance.", ref mConfiguration.mClearReadyCheckOverlayEnteringInstance );
+				ImGui.Checkbox( Loc.Localize( "Config Option: Clear Party Alliance List upon Enteringing Combat in Instance", "Upon entering combat while in instance." ) + "###Upon entering combat while in instance.", ref mConfiguration.mClearReadyCheckOverlayInCombatInInstancedCombat );
 				ImGui.Unindent();
 
 				ImGui.Spacing();
@@ -109,7 +113,7 @@ namespace ReadyCheckHelper
 				ImGui.Spacing();
 				ImGui.Spacing();
 
-				if( ImGui.Button( "Save and Close" ) )
+				if( ImGui.Button( Loc.Localize( "Button: Save and Close", "Save and Close" ) + "###Save and Close" ) )
 				{
 					mConfiguration.Save();
 					SettingsWindowVisible = false;
@@ -127,7 +131,7 @@ namespace ReadyCheckHelper
 			}
 
 			ImGui.SetNextWindowSizeConstraints( new Vector2( 180, 100 ) * ImGui.GetIO().FontGlobalScale, new Vector2( float.MaxValue, float.MaxValue ) );
-			if( ImGui.Begin( "Latest Ready Check Results", ref mReadyCheckResultsWindowVisible,
+			if( ImGui.Begin( Loc.Localize( "Window Title: Ready Check Results", "Latest Ready Check Results" ) + "###Latest Ready Check Results", ref mReadyCheckResultsWindowVisible,
 				ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse ) )
 			{
 				var list = mPlugin.GetProcessedReadyCheckData();
@@ -145,7 +149,7 @@ namespace ReadyCheckHelper
 						tableList[player.GroupIndex].Add( player );
 					}
 
-					if( ImGui.BeginTable( "LatestReadyCheckResultsTable", tableList.Count ) )
+					if( ImGui.BeginTable( "###LatestReadyCheckResultsTable", tableList.Count ) )
 					{
 						foreach( var group in tableList )
 						{
@@ -172,6 +176,10 @@ namespace ReadyCheckHelper
 						ImGui.EndTable();
 					}
 				}
+				else
+				{
+					ImGui.Text( Loc.Localize( "Placeholder: No Ready Check Results Exist", "No ready check has yet occurred.") );
+				}
 
 				ImGui.Spacing();
 				ImGui.Spacing();
@@ -179,7 +187,7 @@ namespace ReadyCheckHelper
 				ImGui.Spacing();
 				ImGui.Spacing();
 
-				if( ImGui.Button( "Close" ) )
+				if( ImGui.Button( Loc.Localize( "Button: Close", "Close" ) + "###Close" ) )
 				{
 					ReadyCheckResultsWindowVisible = false;
 				}
@@ -198,7 +206,7 @@ namespace ReadyCheckHelper
 			//	Draw the window.
 			ImGui.SetNextWindowSize( new Vector2( 1340, 568 ) * ImGui.GetIO().FontGlobalScale, ImGuiCond.FirstUseEver );
 			ImGui.SetNextWindowSizeConstraints( new Vector2( 375, 340 ) * ImGui.GetIO().FontGlobalScale, new Vector2( float.MaxValue, float.MaxValue ) );
-			if( ImGui.Begin( "Ready Check and Alliance Debug Data", ref mDebugWindowVisible ) )
+			if( ImGui.Begin( Loc.Localize( "Window Title: Ready Check and Alliance Debug Data", "Ready Check and Alliance Debug Data" ) + "###Ready Check and Alliance Debug Data", ref mDebugWindowVisible ) )
 			{
 				unsafe
 				{
@@ -231,7 +239,7 @@ namespace ReadyCheckHelper
 						ImGui.Checkbox( "Debug Drawing on Party List", ref mDEBUG_DrawPlaceholderData );
 						ImGui.PushStyleColor( ImGuiCol.Text, 0xee4444ff );
 						ImGui.Text( "Ready Check Object Address:" );
-						ImGuiHelpMarker( "(DO NOT TOUCH THIS UNLESS YOU KNOW EXACTLY WHAT YOU'RE DOING AND WHY; THE ABSOLUTE BEST CASE IS A PLUGIN CRASH)" );
+						ImGuiHelpMarker( Loc.Localize( "Help: Debug Set Object Address Warning", "DO NOT TOUCH THIS UNLESS YOU KNOW EXACTLY WHAT YOU'RE DOING AND WHY; THE ABSOLUTE BEST CASE IS A PLUGIN CRASH." ) );
 						ImGui.InputText( "##ObjectAddressSetInputBox", ref mDEBUG_ReadyCheckObjectAddressInputString, 16 );
 						if( ImGui.Button( "Set Ready Check Object Address" ) )
 						{
@@ -240,6 +248,13 @@ namespace ReadyCheckHelper
 							if( isValidPointer ) MemoryHandler.DEBUG_SetReadyCheckObjectAddress( ptr );
 						}
 						ImGui.PopStyleColor();
+						if( ImGui.Button( "Export Localizable Strings" ) )
+						{
+							string pwd = Directory.GetCurrentDirectory();
+							Directory.SetCurrentDirectory( mPluginInterface.AssemblyLocation.DirectoryName );
+							Loc.ExportLocalizable();
+							Directory.SetCurrentDirectory( pwd );
+						}
 						ImGui.NextColumn();
 						ImGui.Text( "Ready Check Data:" );
 						for( int i = 0; i < readyCheckdata.Length; ++i )
@@ -314,7 +329,7 @@ namespace ReadyCheckHelper
 			//	Draw the window.
 			ImGui.SetNextWindowSize( new Vector2( 1340, 568 ) * ImGui.GetIO().FontGlobalScale, ImGuiCond.FirstUseEver );
 			ImGui.SetNextWindowSizeConstraints( new Vector2( 375, 340 ) * ImGui.GetIO().FontGlobalScale, new Vector2( float.MaxValue, float.MaxValue ) );
-			if( ImGui.Begin( "Raw Ready Check Data", ref mDebugRawWindowVisible ) )
+			if( ImGui.Begin( Loc.Localize( "Window Title: Raw Ready Check Data", "Debug: Raw Ready Check Data" ) + "###Raw Ready Check Data", ref mDebugRawWindowVisible ) )
 			{
 				ImGui.Text( "Early object bytes:" );
 				byte[] readyCheckObjectBytes = null;
@@ -364,6 +379,7 @@ namespace ReadyCheckHelper
 
 		unsafe protected void DrawOnPartyAllianceLists()
 		{
+			//***** TODO: ReadyCheckValid check here makes the debug testing not work. *****
 			if( mConfiguration.ShowReadyCheckOnPartyAllianceList && ReadyCheckValid && mGameGui != null )
 			{
 				const ImGuiWindowFlags flags =	ImGuiWindowFlags.NoDecoration |
@@ -496,17 +512,15 @@ namespace ReadyCheckHelper
 
 					if( readyCheckState == MemoryHandler.ReadyCheckStateEnum.NotReady )
 					{
-						//drawList.AddImage( mNotReadyIconTexture.ImGuiHandle, iconPos, iconPos + iconSize );
 						drawList.AddImage( mReadyCheckIconTexture.ImGuiHandle, iconPos, iconPos + iconSize, new Vector2( 0.5f, 0.0f ), new Vector2( 1.0f ) );
 					}
 					else if( readyCheckState == MemoryHandler.ReadyCheckStateEnum.Ready )
 					{ 
-						//drawList.AddImage( mReadyIconTexture.ImGuiHandle, iconPos, iconPos + iconSize );
 						drawList.AddImage( mReadyCheckIconTexture.ImGuiHandle, iconPos, iconPos + iconSize, new Vector2( 0.0f, 0.0f ), new Vector2( 0.5f, 1.0f ) );
 					}
-					else if( readyCheckState != MemoryHandler.ReadyCheckStateEnum.CrossWorldMemberNotPresent )
+					else if( readyCheckState == MemoryHandler.ReadyCheckStateEnum.CrossWorldMemberNotPresent )
 					{
-						drawList.AddImage( mUnknownStatusIconTexture.ImGuiHandle, iconPos, iconPos + iconSize );
+						drawList.AddImage( mNotPresentIconTexture.ImGuiHandle, iconPos, iconPos + iconSize );
 					}
 				}
 			}
@@ -531,17 +545,15 @@ namespace ReadyCheckHelper
 
 					if( readyCheckState == MemoryHandler.ReadyCheckStateEnum.NotReady )
 					{
-						//drawList.AddImage( mNotReadyIconTexture.ImGuiHandle, iconPos, iconPos + iconSize );
 						drawList.AddImage( mReadyCheckIconTexture.ImGuiHandle, iconPos, iconPos + iconSize, new Vector2( 0.5f, 0.0f ), new Vector2( 1.0f ) );
 					}
 					else if( readyCheckState == MemoryHandler.ReadyCheckStateEnum.Ready )
 					{
-						//drawList.AddImage( mReadyIconTexture.ImGuiHandle, iconPos, iconPos + iconSize );
 						drawList.AddImage( mReadyCheckIconTexture.ImGuiHandle, iconPos, iconPos + iconSize, new Vector2( 0.0f ), new Vector2( 0.5f, 1.0f ) );
 					}
-					else if( readyCheckState != MemoryHandler.ReadyCheckStateEnum.CrossWorldMemberNotPresent )
+					else if( readyCheckState == MemoryHandler.ReadyCheckStateEnum.CrossWorldMemberNotPresent )
 					{
-						drawList.AddImage( mUnknownStatusIconTexture.ImGuiHandle, iconPos, iconPos + iconSize );
+						drawList.AddImage( mNotPresentIconTexture.ImGuiHandle, iconPos, iconPos + iconSize );
 					}
 				}
 			}
@@ -572,17 +584,15 @@ namespace ReadyCheckHelper
 
 						if( readyCheckState == MemoryHandler.ReadyCheckStateEnum.NotReady )
 						{
-							//drawList.AddImage( mNotReadyIconTexture.ImGuiHandle, iconPos, iconPos + iconSize );
 							drawList.AddImage( mReadyCheckIconTexture.ImGuiHandle, iconPos, iconPos + iconSize, new Vector2( 0.5f, 0.0f ), new Vector2( 1.0f ) );
 						}
 						else if( readyCheckState == MemoryHandler.ReadyCheckStateEnum.Ready )
 						{
-							//drawList.AddImage( mReadyIconTexture.ImGuiHandle, iconPos, iconPos + iconSize );
 							drawList.AddImage( mReadyCheckIconTexture.ImGuiHandle, iconPos, iconPos + iconSize, new Vector2( 0.0f, 0.0f ), new Vector2( 0.5f, 1.0f ) );
 						}
-						else if( readyCheckState != MemoryHandler.ReadyCheckStateEnum.CrossWorldMemberNotPresent )
+						else if( readyCheckState == MemoryHandler.ReadyCheckStateEnum.CrossWorldMemberNotPresent )
 						{
-							drawList.AddImage( mUnknownStatusIconTexture.ImGuiHandle, iconPos, iconPos + iconSize );
+							drawList.AddImage( mNotPresentIconTexture.ImGuiHandle, iconPos, iconPos + iconSize );
 						}
 					}
 				}
@@ -625,6 +635,7 @@ namespace ReadyCheckHelper
 
 		protected TextureWrap mReadyCheckIconTexture = null;
 		protected TextureWrap mUnknownStatusIconTexture = null;
+		protected TextureWrap mNotPresentIconTexture = null;
 
 		protected bool ReadyCheckValid { get; set; }
 		protected bool mDEBUG_DrawPlaceholderData = false;

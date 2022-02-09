@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.IO;
 
 using Dalamud.Plugin;
 using Dalamud.Game.ClientState.Conditions;
@@ -13,6 +14,7 @@ using Dalamud.Logging;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using CheapLoc;
 
 namespace ReadyCheckHelper
 {
@@ -47,11 +49,8 @@ namespace ReadyCheckHelper
 			mConfiguration.Initialize( mPluginInterface );
 			MemoryHandler.Init( mSigScanner );
 
-			//	Text Command Initialization
-			mCommandManager.AddHandler( mTextCommandName, new CommandInfo( ProcessTextCommand )
-			{
-				HelpMessage = "Use \"/pready config\" to open the the configuration window."
-			} );
+			//	Localization and Command Initialization
+			OnLanguageChanged( mPluginInterface.UiLanguage );
 			mOpenReadyCheckWindowLink = mPluginInterface.AddChatLinkHandler( 1001, ( i, m ) =>
 			{
 				ShowBestAvailableReadyCheckWindow();
@@ -67,6 +66,7 @@ namespace ReadyCheckHelper
 			PopulateInstancedTerritoriesList();
 
 			//	Event Subscription
+			mPluginInterface.LanguageChanged += OnLanguageChanged;
 			mCondition.ConditionChange += OnConditionChanged;
 			mClientState.TerritoryChanged += OnTerritoryChanged;
 			mFramework.Update += OnGameFrameworkUpdate;
@@ -86,9 +86,37 @@ namespace ReadyCheckHelper
 			mUI.Dispose();
 			mPluginInterface.UiBuilder.Draw -= DrawUI;
 			mPluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
+			mPluginInterface.LanguageChanged -= OnLanguageChanged;
 			mPluginInterface.RemoveChatLinkHandler();
 			mCommandManager.RemoveHandler( mTextCommandName );
 			mInstancedTerritories.Clear();
+		}
+
+		protected void OnLanguageChanged( string langCode )
+		{
+			//***** TODO *****
+			var allowedLang = new List<string>{ /*"de", "ja", "fr", "it", "es"*/ };
+
+			PluginLog.Information( "Trying to set up Loc for culture {0}", langCode );
+
+			if( allowedLang.Contains( langCode ) )
+			{
+				Loc.Setup( File.ReadAllText( Path.Join( mPluginInterface.AssemblyLocation.FullName, $"loc_{langCode}.json" ) ) );
+			}
+			else
+			{
+				Loc.SetupWithFallbacks();
+			}
+
+			//	Set up the command handler with the current language.
+			if( mCommandManager.Commands.ContainsKey( mTextCommandName ) )
+			{
+				mCommandManager.RemoveHandler( mTextCommandName );
+			}
+			mCommandManager.AddHandler( mTextCommandName, new CommandInfo( ProcessTextCommand )
+			{
+				HelpMessage = String.Format( Loc.Localize( "Plugin Text Command Description", "Use {0} to open the the configuration window." ), "\"/pready config\"" )
+			} );
 		}
 
 		//	Text Commands
@@ -154,19 +182,19 @@ namespace ReadyCheckHelper
 		{
 			if( args.ToLower() == "config" )
 			{
-				return "Opens the settings window.";
+				return Loc.Localize( "Config Subcommand Help Message", "Opens the settings window." );
 			}
 			else if( args.ToLower() == "results" )
 			{
-				return "Opens a window containing the results of the last ready check to occur.";
+				return Loc.Localize( "Results Subcommand Help Message", "Opens a window containing the results of the last ready check to occur." );
 			}
 			else if( args.ToLower() == "debug" )
 			{
-				return "Opens a window containing party and ready check object data.";
+				return Loc.Localize( "Debug Subcommand Help Message", "Opens a debugging window containing party and ready check object data." );
 			}
 			else
 			{
-				return "Use \"/pready config\" to open the the configuration window or \"/pready results\" to open a window with the most recent ready check results.";
+				return String.Format( Loc.Localize( "Basic Help Message", "This plugin works automatically.  You can also type {0} to open the the configuration window, or {1} to open a window with the most recent ready check results." ), "\"/pready config\"", "\"/pready results\"" );
 			}
 		}
 
@@ -347,6 +375,7 @@ namespace ReadyCheckHelper
 		{
 			if( notReadyList.Count > 0 )
 			{
+				//***** TODO: Localizing this part will probably just require a separate function for each of the four game languages due to grammar rules. *****
 				string notReadyString = "Not Ready: ";
 				for( int i = 0; i < notReadyList.Count; ++i )
 				{
@@ -358,16 +387,16 @@ namespace ReadyCheckHelper
 					//	Once we've reached the max configured number of individual names to show.
 					else if( i >= mConfiguration.MaxUnreadyToListInChat )
 					{
-						notReadyString += $" and {notReadyList.Count - i} other{(notReadyList.Count - i > 1 ? "s" : "")}";
+						notReadyString += $" and {notReadyList.Count - i} {(notReadyList.Count - i > 1 ? "others" : "other")}";
 						break;
 					}
 					//	Grammar for showing the final name in a list.
 					else if( i == notReadyList.Count - 1 )
 					{
-						notReadyString += " and " + notReadyList[i];
+						notReadyString += $" and {notReadyList[i]}";
 					}
 					//	Grammar for the first item if there will only be two items listed.
-					else if( i == 0 && (notReadyList.Count == 2 || mConfiguration.MaxUnreadyToListInChat < 2) )
+					else if( i == 0 && ( notReadyList.Count == 2 || mConfiguration.MaxUnreadyToListInChat < 2 ) )
 					{
 						notReadyString += notReadyList[i];
 					}
