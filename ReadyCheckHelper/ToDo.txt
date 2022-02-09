@@ -14,6 +14,8 @@ Priority:
 		-Clean up positioning on icons, check at various party list scales.
 		-Add option for top or bottom placement of icon positioning.
 		-Find better unknown icon texture.
+		-Dirty the data when logging out/switching characters.
+		-Add a clear text subcommand.
 
 	Debug stuff:
 		-Add rest of ready check object bytes to raw debug window.

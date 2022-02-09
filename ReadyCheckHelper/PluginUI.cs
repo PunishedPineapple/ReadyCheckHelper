@@ -105,6 +105,8 @@ namespace ReadyCheckHelper
 				ImGui.Checkbox( Loc.Localize( "Config Option: Clear Party Alliance List upon Entering Combat", "Upon entering combat." ) + "###Upon entering combat.", ref mConfiguration.mClearReadyCheckOverlayInCombat );
 				ImGui.Checkbox( Loc.Localize( "Config Option: Clear Party Alliance List upon Entering Instance", "Upon entering instance." ) + "###Upon entering instance.", ref mConfiguration.mClearReadyCheckOverlayEnteringInstance );
 				ImGui.Checkbox( Loc.Localize( "Config Option: Clear Party Alliance List upon Enteringing Combat in Instance", "Upon entering combat while in instance." ) + "###Upon entering combat while in instance.", ref mConfiguration.mClearReadyCheckOverlayInCombatInInstancedCombat );
+				ImGui.Checkbox( String.Format( Loc.Localize( "Config Option: Clear Party Alliance List after X Seconds:", "After {0} seconds:" ), mConfiguration.TimeUntilClearReadyCheckOverlay_Sec ) + "###After X seconds.", ref mConfiguration.mClearReadyCheckOverlayAfterTime );
+				ImGui.DragInt( "###TimeUntilClearOverlaySlider", ref mConfiguration.mTimeUntilClearReadyCheckOverlay_Sec, 1.0f, 30, 900, "%d", ImGuiSliderFlags.AlwaysClamp );
 				ImGui.Unindent();
 
 				ImGui.Spacing();
@@ -380,7 +382,7 @@ namespace ReadyCheckHelper
 		unsafe protected void DrawOnPartyAllianceLists()
 		{
 			//***** TODO: ReadyCheckValid check here makes the debug testing not work. *****
-			if( mConfiguration.ShowReadyCheckOnPartyAllianceList && ReadyCheckValid && mGameGui != null )
+			if( mConfiguration.ShowReadyCheckOnPartyAllianceList && ( ReadyCheckValid || mDEBUG_DrawPlaceholderData ) && mGameGui != null )
 			{
 				const ImGuiWindowFlags flags =	ImGuiWindowFlags.NoDecoration |
 												ImGuiWindowFlags.NoSavedSettings |
@@ -504,10 +506,11 @@ namespace ReadyCheckHelper
 				var pIconNode = pPartyMemberNode->Component->UldManager.NodeList[4];
 				if( (IntPtr)pIconNode != IntPtr.Zero )
 				{
-					//***** TODO: Handle scaled party lists; just testing for now. *****
-					Vector2 iconOffset = new Vector2( -7, -5 );
-					Vector2 iconSize = new Vector2( pIconNode->Width / 3, pIconNode->Height / 3 );
-					Vector2 iconPos = new Vector2( pPartyList->X + pPartyMemberNode->AtkResNode.X + pIconNode->X + pIconNode->Width / 2, pPartyList->Y + pPartyMemberNode->AtkResNode.Y + pIconNode->Y + pIconNode->Height / 2 );
+					//	Note: sub-nodes don't scale, so we have to account for the addon's scale.
+					Vector2 iconOffset = new Vector2( -7, -5 ) * pPartyList->Scale;
+					Vector2 iconSize = new Vector2( pIconNode->Width / 3, pIconNode->Height / 3 ) * pPartyList->Scale;
+					Vector2 iconPos = new Vector2(	pPartyList->X + pPartyMemberNode->AtkResNode.X * pPartyList->Scale + pIconNode->X * pPartyList->Scale + pIconNode->Width * pPartyList->Scale / 2,
+													pPartyList->Y + pPartyMemberNode->AtkResNode.Y * pPartyList->Scale + pIconNode->Y * pPartyList->Scale + pIconNode->Height * pPartyList->Scale / 2 );
 					iconPos += iconOffset;
 
 					if( readyCheckState == MemoryHandler.ReadyCheckStateEnum.NotReady )
@@ -537,10 +540,10 @@ namespace ReadyCheckHelper
 				var pIconNode = pAllianceMemberNode->Component->UldManager.NodeList[5];
 				if( (IntPtr)pIconNode != IntPtr.Zero )
 				{
-					//***** TODO: Handle scaled party lists; just testing for now. *****
-					Vector2 iconOffset = new Vector2( -7, -5 );
-					Vector2 iconSize = new Vector2( pIconNode->Width / 3, pIconNode->Height / 3 );
-					Vector2 iconPos = new Vector2( pAllianceList->X + pAllianceMemberNode->AtkResNode.X + pIconNode->X + pIconNode->Width / 2, pAllianceList->Y + pAllianceMemberNode->AtkResNode.Y + pIconNode->Y + pIconNode->Height / 2 );
+					Vector2 iconOffset = new Vector2( 0, 0 ) * pAllianceList->Scale;
+					Vector2 iconSize = new Vector2( pIconNode->Width / 3, pIconNode->Height / 3 ) * pAllianceList->Scale;
+					Vector2 iconPos = new Vector2(	pAllianceList->X + pAllianceMemberNode->AtkResNode.X * pAllianceList->Scale + pIconNode->X * pAllianceList->Scale + pIconNode->Width * pAllianceList->Scale / 2,
+													pAllianceList->Y + pAllianceMemberNode->AtkResNode.Y * pAllianceList->Scale + pIconNode->Y * pAllianceList->Scale + pIconNode->Height * pAllianceList->Scale / 2 );
 					iconPos += iconOffset;
 
 					if( readyCheckState == MemoryHandler.ReadyCheckStateEnum.NotReady )
@@ -566,6 +569,7 @@ namespace ReadyCheckHelper
 			int allianceNodeIndex = 8 - allianceIndex;
 			int partyNodeIndex = 8 - partyMemberIndex;
 
+			//***** TODO: This *occasionally* crashes, and I don't understand why.  Best guess is that the node list is not populated all at once, but grows as the addon is created. *****
 			var pAllianceNode = (AtkComponentNode*) pAllianceList->UldManager.NodeList[allianceNodeIndex];
 			if( (IntPtr)pAllianceNode != IntPtr.Zero )
 			{
@@ -575,11 +579,10 @@ namespace ReadyCheckHelper
 					var pIconNode = pPartyMemberNode->Component->UldManager.NodeList[2];
 					if( (IntPtr)pIconNode != IntPtr.Zero )
 					{
-						//***** TODO: Handle scaled party lists; just testing for now. *****
-						Vector2 iconOffset = new Vector2( 0, 0 );
-						Vector2 iconSize = new Vector2( pIconNode->Width / 2, pIconNode->Height / 2 );
-						Vector2 iconPos = new Vector2(	pAllianceList->X + pAllianceNode->AtkResNode.X + pPartyMemberNode->AtkResNode.X + pIconNode->X + pIconNode->Width / 2,
-														pAllianceList->Y + pAllianceNode->AtkResNode.Y + pPartyMemberNode->AtkResNode.Y + pIconNode->Y + pIconNode->Height / 2 );
+						Vector2 iconOffset = new Vector2( 0, 0 ) * pAllianceList->Scale;
+						Vector2 iconSize = new Vector2( pIconNode->Width / 2, pIconNode->Height / 2 ) * pAllianceList->Scale;
+						Vector2 iconPos = new Vector2(	pAllianceList->X + pAllianceNode->AtkResNode.X * pAllianceList->Scale + pPartyMemberNode->AtkResNode.X * pAllianceList->Scale + pIconNode->X * pAllianceList->Scale + pIconNode->Width * pAllianceList->Scale / 2,
+														pAllianceList->Y + pAllianceNode->AtkResNode.Y * pAllianceList->Scale + pPartyMemberNode->AtkResNode.Y * pAllianceList->Scale + pIconNode->Y * pAllianceList->Scale + pIconNode->Height * pAllianceList->Scale / 2 );
 						iconPos += iconOffset;
 
 						if( readyCheckState == MemoryHandler.ReadyCheckStateEnum.NotReady )

@@ -242,6 +242,18 @@ namespace ReadyCheckHelper
 
 			//	Print it to chat in the desired format.
 			ListUnreadyPlayersInChat( notReadyList );
+
+			//	Start a task to clean up the icons on the party chat after the configured amount of time.
+			if( mConfiguration.ClearReadyCheckOverlayAfterTime )
+			{
+				Task.Run( async () =>
+				{
+					//***** TODO: Cancellation when a new ready check is started before this is done. *****
+					int delay_Sec = Math.Max( 0, Math.Min( mConfiguration.TimeUntilClearReadyCheckOverlay_Sec, 900 ) ); //	Just to be safe...
+					await Task.Delay( delay_Sec * 1000 );
+					mUI.InvalidateReadyCheck();
+				} );
+			}
 		}
 
 		unsafe protected void ProcessReadyCheckResults()

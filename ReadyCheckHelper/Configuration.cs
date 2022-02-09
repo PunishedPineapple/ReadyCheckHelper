@@ -57,6 +57,20 @@ namespace ReadyCheckHelper
 			set { mClearReadyCheckOverlayInCombatInInstancedCombat = value; }
 		}
 
+		public bool mClearReadyCheckOverlayAfterTime = false;
+		public bool ClearReadyCheckOverlayAfterTime
+		{
+			get { return mClearReadyCheckOverlayAfterTime; }
+			set { mClearReadyCheckOverlayAfterTime = value; }
+		}
+
+		public int mTimeUntilClearReadyCheckOverlay_Sec = 60;
+		public int TimeUntilClearReadyCheckOverlay_Sec
+		{
+			get { return mTimeUntilClearReadyCheckOverlay_Sec; }
+			set { mTimeUntilClearReadyCheckOverlay_Sec = value; }
+		}
+
 		//  Plugin framework and related convenience functions below.
 		public void Initialize( DalamudPluginInterface pluginInterface )
 		{
