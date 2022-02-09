@@ -161,6 +161,10 @@ namespace ReadyCheckHelper
 			{
 				mUI.ReadyCheckResultsWindowVisible = !mUI.ReadyCheckResultsWindowVisible;
 			}
+			else if( subCommand.ToLower() == "clear" )
+			{
+				mUI.InvalidateReadyCheck();
+			}
 			else if( subCommand.ToLower() == "help" || subCommand.ToLower() == "?" )
 			{
 				commandResponse = ProcessTextCommand_Help( subCommandArgs );
@@ -188,13 +192,17 @@ namespace ReadyCheckHelper
 			{
 				return Loc.Localize( "Results Subcommand Help Message", "Opens a window containing the results of the last ready check to occur." );
 			}
+			else if( args.ToLower() == "clear" )
+			{
+				return Loc.Localize( "Clear Subcommand Help Message", "Removes the most recent ready check icons from the party/alliance lists." );
+			}
 			else if( args.ToLower() == "debug" )
 			{
 				return Loc.Localize( "Debug Subcommand Help Message", "Opens a debugging window containing party and ready check object data." );
 			}
 			else
 			{
-				return String.Format( Loc.Localize( "Basic Help Message", "This plugin works automatically.  You can also type {0} to open the the configuration window, or {1} to open a window with the most recent ready check results." ), "\"/pready config\"", "\"/pready results\"" );
+				return String.Format( Loc.Localize( "Basic Help Message", "This plugin works automatically; however, some text commands are supported.  Valid subcommands are {0}, {1}, and {2}.  Use \"{3} <subcommand>\" for more information on each subcommand." ), "\"config\"", "\"results\"", "\"clear\"", "/pready help" );
 			}
 		}
 
@@ -248,10 +256,9 @@ namespace ReadyCheckHelper
 			{
 				Task.Run( async () =>
 				{
-					//***** TODO: Cancellation when a new ready check is started before this is done. *****
 					int delay_Sec = Math.Max( 0, Math.Min( mConfiguration.TimeUntilClearReadyCheckOverlay_Sec, 900 ) ); //	Just to be safe...
 					await Task.Delay( delay_Sec * 1000 );
-					mUI.InvalidateReadyCheck();
+					if( !ReadyCheckActive ) mUI.InvalidateReadyCheck();
 				} );
 			}
 		}
