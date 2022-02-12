@@ -300,14 +300,17 @@ namespace ReadyCheckHelper
 
 					//	Grab all of the alliance members here to make lookups easier since there's no function in client structs to get an alliance member by object ID.
 					Dictionary<UInt32, Tuple<UInt64, string, byte, byte>> allianceMemberDict = new Dictionary<UInt32, Tuple<UInt64, string, byte, byte>>();
-					for( int i = 0; i < 16; ++i )
+					for( int j = 0; j < 2; ++j )
 					{
-						var pGroupMember = FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->GetAllianceMemberByIndex( i );
-						if( (IntPtr)pGroupMember != IntPtr.Zero )
+						for( int i = 0; i < 8; ++i )
 						{
-							string name = System.Text.Encoding.UTF8.GetString( pGroupMember->Name, 64 );    //***** TODO: How to get fixed buffer lenghth instead of magic numbering it here? *****
-							name = name.Substring( 0, name.IndexOf( '\0' ) );
-							allianceMemberDict.TryAdd( pGroupMember->ObjectID, Tuple.Create( (UInt64)pGroupMember->ContentID, name, (byte)( i / 8 ), (byte)( i % 8 ) ) );
+							var pGroupMember = FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->GetAllianceMemberByGroupAndIndex( j, i );
+							if( (IntPtr)pGroupMember != IntPtr.Zero )
+							{
+								string name = System.Text.Encoding.UTF8.GetString( pGroupMember->Name, 64 );    //***** TODO: How to get fixed buffer lenghth instead of magic numbering it here? *****
+								name = name.Substring( 0, name.IndexOf( '\0' ) );
+								allianceMemberDict.TryAdd( pGroupMember->ObjectID, Tuple.Create( (UInt64)pGroupMember->ContentID, name, (byte)( j + 1 ), (byte)i ) );
+							}
 						}
 					}
 
