@@ -144,6 +144,7 @@ namespace ReadyCheckHelper
 				if( list != null )
 				{
 					//	We have to sort and reorganize this yet again because of how ImGui tables work ;_;
+					int maxPartyMembers = 0;
 					list.Sort( ( a, b ) => a.GroupIndex.CompareTo( b.GroupIndex ) );
 					var tableList = new List<List<Plugin.CorrelatedReadyCheckEntry>>();
 					foreach( var player in list )
@@ -153,30 +154,38 @@ namespace ReadyCheckHelper
 							tableList.Add( new List<Plugin.CorrelatedReadyCheckEntry>() );
 						}
 						tableList[player.GroupIndex].Add( player );
+						maxPartyMembers = Math.Max( maxPartyMembers, tableList[player.GroupIndex].Count );
 					}
-
+					
 					if( ImGui.BeginTable( "###LatestReadyCheckResultsTable", tableList.Count ) )
 					{
-						foreach( var group in tableList )
+						for( int i = 0; i < maxPartyMembers; ++i )
 						{
 							ImGui.TableNextRow();
-							foreach( var player in group )
+							for( int j = 0; j < tableList.Count; ++j )
 							{
 								ImGui.TableNextColumn();
-								if( player.ReadyState == MemoryHandler.ReadyCheckStateEnum.Ready )
+								if( i < tableList[j].Count )
 								{
-									ImGui.Image( mReadyCheckIconTexture.ImGuiHandle, new Vector2( 24 ), new Vector2( 0.0f ), new Vector2( 0.5f, 1.0f ) );
+									if( tableList[j][i].ReadyState == MemoryHandler.ReadyCheckStateEnum.Ready )
+									{
+										ImGui.Image( mReadyCheckIconTexture.ImGuiHandle, new Vector2( 24 ), new Vector2( 0.0f ), new Vector2( 0.5f, 1.0f ) );
+									}
+									else if( tableList[j][i].ReadyState == MemoryHandler.ReadyCheckStateEnum.NotReady )
+									{
+										ImGui.Image( mReadyCheckIconTexture.ImGuiHandle, new Vector2( 24 ), new Vector2( 0.5f, 0.0f ), new Vector2( 1.0f ) );
+									}
+									else if( tableList[j][i].ReadyState == MemoryHandler.ReadyCheckStateEnum.CrossWorldMemberNotPresent )
+									{
+										ImGui.Image( mNotPresentIconTexture.ImGuiHandle, new Vector2( 24 ) );
+									}
+									else
+									{
+										ImGui.Image( mUnknownStatusIconTexture.ImGuiHandle, new Vector2( 24 ), new Vector2( 0.0f ), new Vector2( 1.0f ), new Vector4( 0.0f ) );
+									}
+									ImGui.SameLine();
+									ImGui.Text( tableList[j][i].Name );
 								}
-								else if( player.ReadyState == MemoryHandler.ReadyCheckStateEnum.NotReady )
-								{
-									ImGui.Image( mReadyCheckIconTexture.ImGuiHandle, new Vector2( 24 ), new Vector2( 0.5f, 0.0f ), new Vector2( 1.0f ) );
-								}
-								else
-								{
-									ImGui.Image( mUnknownStatusIconTexture.ImGuiHandle, new Vector2( 24 ), new Vector2( 0.5f, 0.0f ), new Vector2( 1.0f ), new Vector4( 0.0f ) );
-								}
-								ImGui.SameLine();
-								ImGui.Text( player.Name );
 							}
 						}
 						ImGui.EndTable();
@@ -385,8 +394,7 @@ namespace ReadyCheckHelper
 
 		unsafe protected void DrawOnPartyAllianceLists()
 		{
-			//***** TODO: ReadyCheckValid check here makes the debug testing not work. *****
-			if( mConfiguration.ShowReadyCheckOnPartyAllianceList && ( ReadyCheckValid || mDEBUG_DrawPlaceholderData ) && mGameGui != null )
+			if( ( mDEBUG_DrawPlaceholderData || ( mConfiguration.ShowReadyCheckOnPartyAllianceList && ReadyCheckValid ) ) && mGameGui != null )
 			{
 				const ImGuiWindowFlags flags =	ImGuiWindowFlags.NoDecoration |
 												ImGuiWindowFlags.NoSavedSettings |
@@ -502,12 +510,13 @@ namespace ReadyCheckHelper
 		unsafe protected void DrawOnPartyList( int listIndex, MemoryHandler.ReadyCheckStateEnum readyCheckState, AtkUnitBase* pPartyList, ImDrawListPtr drawList )
 		{
 			if( listIndex < 0 || listIndex > 7 ) return;
-			int nodeIndex = 21 - listIndex;
+			int partyMemberNodeIndex = 21 - listIndex;
+			int iconNodeIndex = 4;
 
-			var pPartyMemberNode = (AtkComponentNode*) pPartyList->UldManager.NodeList[nodeIndex];
+			var pPartyMemberNode = pPartyList->UldManager.NodeListSize > partyMemberNodeIndex ? (AtkComponentNode*) pPartyList->UldManager.NodeList[partyMemberNodeIndex] : (AtkComponentNode*) IntPtr.Zero;
 			if( (IntPtr)pPartyMemberNode != IntPtr.Zero )
 			{
-				var pIconNode = pPartyMemberNode->Component->UldManager.NodeList[4];
+				var pIconNode = pPartyMemberNode->Component->UldManager.NodeListSize > iconNodeIndex ? pPartyMemberNode->Component->UldManager.NodeList[iconNodeIndex] : (AtkResNode*) IntPtr.Zero;
 				if( (IntPtr)pIconNode != IntPtr.Zero )
 				{
 					//	Note: sub-nodes don't scale, so we have to account for the addon's scale.
@@ -536,12 +545,13 @@ namespace ReadyCheckHelper
 		unsafe protected void DrawOnAllianceList( int listIndex, MemoryHandler.ReadyCheckStateEnum readyCheckState, AtkUnitBase* pAllianceList, ImDrawListPtr drawList )
 		{
 			if( listIndex < 0 || listIndex > 7 ) return;
-			int nodeIndex = 9 - listIndex;
+			int partyMemberNodeIndex = 9 - listIndex;
+			int iconNodeIndex = 5;
 
-			var pAllianceMemberNode = (AtkComponentNode*) pAllianceList->UldManager.NodeList[nodeIndex];
+			var pAllianceMemberNode = pAllianceList->UldManager.NodeListSize > partyMemberNodeIndex ? (AtkComponentNode*) pAllianceList->UldManager.NodeList[partyMemberNodeIndex] : (AtkComponentNode*) IntPtr.Zero;
 			if( (IntPtr)pAllianceMemberNode != IntPtr.Zero )
 			{
-				var pIconNode = pAllianceMemberNode->Component->UldManager.NodeList[5];
+				var pIconNode = pAllianceMemberNode->Component->UldManager.NodeListSize > iconNodeIndex ? pAllianceMemberNode->Component->UldManager.NodeList[iconNodeIndex] : (AtkResNode*) IntPtr.Zero;
 				if( (IntPtr)pIconNode != IntPtr.Zero )
 				{
 					Vector2 iconOffset = new Vector2( 0, 0 ) * pAllianceList->Scale;
@@ -571,16 +581,17 @@ namespace ReadyCheckHelper
 			if( allianceIndex < 1 || allianceIndex > 5 ) return;
 			if( partyMemberIndex < 0 || partyMemberIndex > 7 ) return;
 			int allianceNodeIndex = 8 - allianceIndex;
-			int partyNodeIndex = 8 - partyMemberIndex;
+			int partyMemberNodeIndex = 8 - partyMemberIndex;
+			int iconNodeIndex = 2;
 
-			//***** TODO: This *occasionally* crashes, and I don't understand why.  Best guess is that the node list is not populated all at once, but grows as the addon is created. *****
-			var pAllianceNode = (AtkComponentNode*) pAllianceList->UldManager.NodeList[allianceNodeIndex];
+			//***** TODO: This *occasionally* crashes, and I don't understand why.  Best guess is that the node list is not populated all at once, but grows as the addon is created.*****
+			var pAllianceNode = pAllianceList->UldManager.NodeListSize > allianceNodeIndex ? (AtkComponentNode*) pAllianceList->UldManager.NodeList[allianceNodeIndex] : (AtkComponentNode*) IntPtr.Zero;
 			if( (IntPtr)pAllianceNode != IntPtr.Zero )
 			{
-				var pPartyMemberNode = (AtkComponentNode*) pAllianceNode->Component->UldManager.NodeList[partyNodeIndex];
+				var pPartyMemberNode = pAllianceNode->Component->UldManager.NodeListSize > partyMemberNodeIndex ? (AtkComponentNode*) pAllianceNode->Component->UldManager.NodeList[partyMemberNodeIndex] : (AtkComponentNode*) IntPtr.Zero;
 				if( (IntPtr)pPartyMemberNode != IntPtr.Zero )
 				{
-					var pIconNode = pPartyMemberNode->Component->UldManager.NodeList[2];
+					var pIconNode = pPartyMemberNode->Component->UldManager.NodeListSize > iconNodeIndex ? pPartyMemberNode->Component->UldManager.NodeList[iconNodeIndex] : (AtkResNode*) IntPtr.Zero;
 					if( (IntPtr)pIconNode != IntPtr.Zero )
 					{
 						Vector2 iconOffset = new Vector2( 0, 0 ) * pAllianceList->Scale;
