@@ -68,6 +68,7 @@ namespace ReadyCheckHelper
 			DrawReadyCheckResultsWindow();
 			DrawDebugWindow();
 			DrawDebugRawWindow();
+			DrawDebugProcessedWindow();
 
 			//	Draw other UI stuff.
 			DrawOnPartyAllianceLists();
@@ -144,7 +145,6 @@ namespace ReadyCheckHelper
 				if( list != null )
 				{
 					//	We have to sort and reorganize this yet again because of how ImGui tables work ;_;
-					int maxPartyMembers = 0;
 					list.Sort( ( a, b ) => a.GroupIndex.CompareTo( b.GroupIndex ) );
 					var tableList = new List<List<Plugin.CorrelatedReadyCheckEntry>>();
 					foreach( var player in list )
@@ -154,17 +154,16 @@ namespace ReadyCheckHelper
 							tableList.Add( new List<Plugin.CorrelatedReadyCheckEntry>() );
 						}
 						tableList[player.GroupIndex].Add( player );
-						maxPartyMembers = Math.Max( maxPartyMembers, tableList[player.GroupIndex].Count );
 					}
 					
 					if( ImGui.BeginTable( "###LatestReadyCheckResultsTable", tableList.Count ) )
 					{
-						for( int i = 0; i < maxPartyMembers; ++i )
+						for( int i = 0; i < 8; ++i )
 						{
 							ImGui.TableNextRow();
 							for( int j = 0; j < tableList.Count; ++j )
 							{
-								ImGui.TableNextColumn();
+								ImGui.TableSetColumnIndex( j );
 								if( i < tableList[j].Count )
 								{
 									if( tableList[j][i].ReadyState == MemoryHandler.ReadyCheckStateEnum.Ready )
@@ -185,6 +184,11 @@ namespace ReadyCheckHelper
 									}
 									ImGui.SameLine();
 									ImGui.Text( tableList[j][i].Name );
+								}
+								//	Probably don't need this, but tables are sometimes getting clobbered, so putting it here just in case that helps.
+								else
+								{
+									ImGui.Image( mUnknownStatusIconTexture.ImGuiHandle, new Vector2( 24 ), new Vector2( 0.0f ), new Vector2( 1.0f ), new Vector4( 0.0f ) );
 								}
 							}
 						}
@@ -251,6 +255,7 @@ namespace ReadyCheckHelper
 						}
 						ImGui.Text( $"Ready check is active: {mPlugin.ReadyCheckActive}" );
 						if( ImGui.Button( "Show/Hide Raw Readycheck Data" ) ) DebugRawWindowVisible = !DebugRawWindowVisible;
+						if( ImGui.Button( "Show/Hide Processed Readycheck Data" ) ) DebugProcessedWindowVisible = !DebugProcessedWindowVisible;
 						ImGui.Checkbox( "Debug Drawing on Party List", ref mDEBUG_DrawPlaceholderData );
 						ImGui.PushStyleColor( ImGuiCol.Text, 0xee4444ff );
 						ImGui.Text( "Ready Check Object Address:" );
@@ -385,6 +390,37 @@ namespace ReadyCheckHelper
 				else
 				{
 					ImGui.Text( "Raw ready check data is unavailable, most likely due to not yet having located the ready check object." );
+				}
+			}
+
+			//	We're done.
+			ImGui.End();
+		}
+
+		protected void DrawDebugProcessedWindow()
+		{
+			if( !DebugProcessedWindowVisible )
+			{
+				return;
+			}
+
+			//	Draw the window.
+			ImGui.SetNextWindowSize( new Vector2( 1340, 568 ) * ImGui.GetIO().FontGlobalScale, ImGuiCond.FirstUseEver );
+			ImGui.SetNextWindowSizeConstraints( new Vector2( 375, 340 ) * ImGui.GetIO().FontGlobalScale, new Vector2( float.MaxValue, float.MaxValue ) );
+			if( ImGui.Begin( Loc.Localize( "Window Title: Processed Ready Check Data", "Debug: Processed Ready Check Data" ) + "###Processed Ready Check Data", ref mDebugProcessedWindowVisible ) )
+			{
+				var list = mPlugin.GetProcessedReadyCheckData();
+				if( list != null )
+				{
+					foreach( var player in list )
+					{
+						ImGui.Text( $"OID: {player.ObjectID}, CID: {player.ContentID}, Group: {player.GroupIndex}, Index: {player.MemberIndex}, State: {(byte)player.ReadyState}, Name: {player.Name}" );
+					}
+				}
+
+				if( ImGui.Button( Loc.Localize( "Button: Close", "Close" ) + "###Close" ) )
+				{
+					DebugProcessedWindowVisible = false;
 				}
 			}
 
@@ -686,6 +722,13 @@ namespace ReadyCheckHelper
 		{
 			get { return mDebugRawWindowVisible; }
 			set { mDebugRawWindowVisible = value; }
+		}
+
+		protected bool mDebugProcessedWindowVisible = false;
+		public bool DebugProcessedWindowVisible
+		{
+			get { return mDebugProcessedWindowVisible; }
+			set { mDebugProcessedWindowVisible = value; }
 		}
 	}
 }
