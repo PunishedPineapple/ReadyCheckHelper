@@ -17,7 +17,10 @@ namespace ReadyCheckHelper
 			}
 
 			//	Create underlying array.
-			mRawReadyCheckArray = new IntPtr[mArrayLength];
+			lock( mReadyCheckArrayLockObj )
+			{
+				mRawReadyCheckArray = new IntPtr[mArrayLength];
+			}
 
 			//	Get Function Pointers, etc.
 			try
@@ -63,7 +66,10 @@ namespace ReadyCheckHelper
 			mReadyCheckBeginHook = null;
 			mReadyCheckEndHook = null;
 			mpReadyCheckObject = IntPtr.Zero;
-			mRawReadyCheckArray = null;
+			lock( mReadyCheckArrayLockObj )
+			{
+				mRawReadyCheckArray = null;
+			}
 		}
 
 		private static void ReadyCheckBeginDetour( IntPtr ptr )
@@ -102,9 +108,12 @@ namespace ReadyCheckHelper
 
 		private static void UpdateRawReadyCheckData()
 		{
-			if( CanGetRawReadyCheckData() )
+			lock( mReadyCheckArrayLockObj )
 			{
-				Marshal.Copy( new IntPtr( mpReadyCheckObject.ToInt64() + mArrayOffset ), mRawReadyCheckArray, 0, mArrayLength );
+				if( CanGetRawReadyCheckData() )
+				{
+					Marshal.Copy( new IntPtr( mpReadyCheckObject.ToInt64() + mArrayOffset ), mRawReadyCheckArray, 0, mArrayLength );
+				}
 			}
 		}
 
@@ -127,7 +136,10 @@ namespace ReadyCheckHelper
 		{
 			rawDataArray = new IntPtr[mArrayLength];
 			UpdateRawReadyCheckData();
-			Array.Copy( mRawReadyCheckArray, rawDataArray, mArrayLength );
+			lock( mReadyCheckArrayLockObj )
+			{
+				Array.Copy( mRawReadyCheckArray, rawDataArray, mArrayLength );
+			}
 			return CanGetRawReadyCheckData();
 		}
 
@@ -137,12 +149,15 @@ namespace ReadyCheckHelper
 
 			ReadyCheckInfo[] retVal = new ReadyCheckInfo[mArrayLength/2];
 
-			if( mRawReadyCheckArray != null )
+			lock( mReadyCheckArrayLockObj )
 			{
-				for( int i = 0; i < retVal.Length; ++i )
+				if( mRawReadyCheckArray != null )
 				{
-					retVal[i] = new ReadyCheckInfo( (ReadyCheckStateEnum)(mRawReadyCheckArray[i * 2 + 1].ToInt64() & 0xFF),
-													(UInt64)mRawReadyCheckArray[i * 2] );
+					for( int i = 0; i < retVal.Length; ++i )
+					{
+						retVal[i] = new ReadyCheckInfo( (ReadyCheckStateEnum)(mRawReadyCheckArray[i * 2 + 1].ToInt64() & 0xFF),
+														(UInt64)mRawReadyCheckArray[i * 2] );
+					}
 				}
 			}
 
@@ -178,8 +193,8 @@ namespace ReadyCheckHelper
 		public static event EventHandler ReadyCheckInitiatedEvent;
 		public static event EventHandler ReadyCheckCompleteEvent;
 
-		//*****TODO: If we decide to not create a new array each time we're asked for the data, We need to have a synchronization object and use it for outside access vs. when we're updating our data.*****
-		//private static Object mLockObj = new object();
+		//	Misc.
+		private static Object mReadyCheckArrayLockObj = new object();
 
 		public struct ReadyCheckInfo
 		{

@@ -240,11 +240,15 @@ namespace ReadyCheckHelper
 			//	Construct a list of who's not ready.
 			var notReadyList = new List<String>();
 
-			foreach( var person in mProcessedReadyCheckData )
+			lock( mProcessedReadyCheckDataLockObj )
 			{
-				if( person.ReadyState == MemoryHandler.ReadyCheckStateEnum.NotReady )
+				foreach( var person in mProcessedReadyCheckData )
 				{
-					notReadyList.Add( person.Name );
+					if( person.ReadyState == MemoryHandler.ReadyCheckStateEnum.NotReady ||
+						person.ReadyState == MemoryHandler.ReadyCheckStateEnum.CrossWorldMemberNotPresent )
+					{
+						notReadyList.Add( person.Name );
+					}
 				}
 			}
 
@@ -351,7 +355,10 @@ namespace ReadyCheckHelper
 					}
 
 					//	Assign to the persistent list if we've gotten through this without any problems.
-					mProcessedReadyCheckData = readyCheckProcessedList;
+					lock( mProcessedReadyCheckDataLockObj )
+					{
+						mProcessedReadyCheckData = readyCheckProcessedList;
+					}
 				}
 				catch( Exception e )
 				{
@@ -381,7 +388,10 @@ namespace ReadyCheckHelper
 					}
 
 					//	Assign to the persistent list if we've gotten through this without any problems.
-					mProcessedReadyCheckData = readyCheckProcessedList;
+					lock( mProcessedReadyCheckDataLockObj )
+					{
+						mProcessedReadyCheckData = readyCheckProcessedList;
+					}
 				}
 				catch( Exception e )
 				{
@@ -487,7 +497,10 @@ namespace ReadyCheckHelper
 
 		public List<CorrelatedReadyCheckEntry> GetProcessedReadyCheckData()
 		{
-			return mProcessedReadyCheckData != null ? new List<CorrelatedReadyCheckEntry>( mProcessedReadyCheckData ) : null;
+			lock( mProcessedReadyCheckDataLockObj )
+			{
+				return mProcessedReadyCheckData != null ? new List<CorrelatedReadyCheckEntry>( mProcessedReadyCheckData ) : null;
+			}
 		}
 
 		protected void PopulateInstancedTerritoriesList()
@@ -502,6 +515,7 @@ namespace ReadyCheckHelper
 
 		protected List<UInt32> mInstancedTerritories = new List<UInt32>();
 		protected List<CorrelatedReadyCheckEntry> mProcessedReadyCheckData;
+		protected Object mProcessedReadyCheckDataLockObj = new object();
 		public bool ReadyCheckActive { get; protected set; } = false;
 
 		protected DalamudPluginInterface mPluginInterface;
