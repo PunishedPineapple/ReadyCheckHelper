@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
 
@@ -69,6 +70,7 @@ namespace ReadyCheckHelper
 			mPluginInterface.LanguageChanged += OnLanguageChanged;
 			mCondition.ConditionChange += OnConditionChanged;
 			mClientState.TerritoryChanged += OnTerritoryChanged;
+			mClientState.Logout += OnLogout;
 			mFramework.Update += OnGameFrameworkUpdate;
 			MemoryHandler.ReadyCheckInitiatedEvent += OnReadyCheckInitiated;
 			MemoryHandler.ReadyCheckCompleteEvent += OnReadyCheckCompleted;
@@ -80,6 +82,7 @@ namespace ReadyCheckHelper
 			MemoryHandler.ReadyCheckInitiatedEvent -= OnReadyCheckInitiated;
 			MemoryHandler.ReadyCheckCompleteEvent -= OnReadyCheckCompleted;
 			mFramework.Update -= OnGameFrameworkUpdate;
+			mClientState.Logout -= OnLogout;
 			mClientState.TerritoryChanged -= OnTerritoryChanged;
 			mCondition.ConditionChange -= OnConditionChanged;
 			MemoryHandler.Uninit();
@@ -90,6 +93,8 @@ namespace ReadyCheckHelper
 			mPluginInterface.RemoveChatLinkHandler();
 			mCommandManager.RemoveHandler( mTextCommandName );
 			mInstancedTerritories.Clear();
+			mTimedOverlayCancellationSource?.Dispose();
+			mTimedOverlayCancellationSource = null;
 		}
 
 		protected void OnLanguageChanged( string langCode )
@@ -218,18 +223,25 @@ namespace ReadyCheckHelper
 
 		protected void OnGameFrameworkUpdate( Framework framework )
 		{
-			if( ReadyCheckActive ) ProcessReadyCheckResults();
+			if( mClientState.IsLoggedIn && ReadyCheckActive ) ProcessReadyCheckResults();
 		}
 
 		protected void OnReadyCheckInitiated( object sender, System.EventArgs e )
 		{
+			//	Shouldn't really be getting here if someone is logged out, but better safe than sorry.
+			if( !mClientState.IsLoggedIn ) return;
+
 			//	Flag that we should start processing the data every frame.
 			ReadyCheckActive = true;
 			mUI.ShowReadyCheckOverlay();
+			mTimedOverlayCancellationSource?.Cancel();
 		}
 
 		protected void OnReadyCheckCompleted( object sender, System.EventArgs e )
 		{
+			//	Shouldn't really be getting here if someone is logged out, but better safe than sorry.
+			if( !mClientState.IsLoggedIn ) return;
+
 			//	Flag that we don't need to keep updating.
 			ReadyCheckActive = false;
 			mUI.ShowReadyCheckOverlay();
@@ -258,10 +270,25 @@ namespace ReadyCheckHelper
 			//	Start a task to clean up the icons on the party chat after the configured amount of time.
 			if( mConfiguration.ClearReadyCheckOverlayAfterTime )
 			{
+				mTimedOverlayCancellationSource = new CancellationTokenSource();
 				Task.Run( async () =>
 				{
 					int delay_Sec = Math.Max( 0, Math.Min( mConfiguration.TimeUntilClearReadyCheckOverlay_Sec, 900 ) ); //	Just to be safe...
-					await Task.Delay( delay_Sec * 1000 );
+
+					try
+					{
+						await Task.Delay( delay_Sec * 1000, mTimedOverlayCancellationSource.Token );
+					}
+					catch( OperationCanceledException )
+					{
+						return;
+					}
+					finally
+					{
+						mTimedOverlayCancellationSource?.Dispose();
+						mTimedOverlayCancellationSource = null;
+					}
+
 					if( !ReadyCheckActive ) mUI.InvalidateReadyCheck();
 				} );
 			}
@@ -498,6 +525,14 @@ namespace ReadyCheckHelper
 			if( mConfiguration.ClearReadyCheckOverlayEnteringInstance && mInstancedTerritories.Contains( ID ) ) mUI.InvalidateReadyCheck();
 		}
 
+		protected void OnLogout( object sender, System.EventArgs e )
+		{
+			ReadyCheckActive = false;
+			mTimedOverlayCancellationSource?.Cancel();
+			mUI.InvalidateReadyCheck();
+			mProcessedReadyCheckData = null;
+		}
+
 		public List<CorrelatedReadyCheckEntry> GetProcessedReadyCheckData()
 		{
 			lock( mProcessedReadyCheckDataLockObj )
@@ -519,6 +554,7 @@ namespace ReadyCheckHelper
 		protected List<UInt32> mInstancedTerritories = new List<UInt32>();
 		protected List<CorrelatedReadyCheckEntry> mProcessedReadyCheckData;
 		protected Object mProcessedReadyCheckDataLockObj = new object();
+		protected CancellationTokenSource mTimedOverlayCancellationSource = null;
 		public bool ReadyCheckActive { get; protected set; } = false;
 
 		protected DalamudPluginInterface mPluginInterface;

@@ -3,17 +3,13 @@
 
 Bugs:
 -In crossworld party, CID in the ready check data becomes zero if a person DCs, making the existing logic not work in that case.  Maybe cache the IDs at the start of a ready check?
-	-This doesn't always happen, but as a related issue, might want to make ready check status 4 count in the chat message as not ready.
 
 
 Priority:
 	Drawing on party/alliance lists:
-		-Figure out why in-instance alliances aren't drawing.  (This is probably due to incorrect offsets in HudManager).
 		-Dirty the data when the party changes.
 		-Add option for top or bottom placement of icon positioning.  (Or user-configurable offsets)
 		-Find better unknown icon texture.
-		-Dirty the data when logging out/switching characters.
-		-Implement proper cancellation of the clear overlay task when a new ready check is started.  It'll still be funky as-is if you have a long clear time configured.
 
 	Debug stuff:
 		-Add rest of ready check object bytes to raw debug window.
