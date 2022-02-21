@@ -227,6 +227,7 @@ namespace ReadyCheckHelper
 			ImGui.SetNextWindowSizeConstraints( new Vector2( 375, 340 ) * ImGui.GetIO().FontGlobalScale, new Vector2( float.MaxValue, float.MaxValue ) );
 			if( ImGui.Begin( Loc.Localize( "Window Title: Ready Check and Alliance Debug Data", "Ready Check and Alliance Debug Data" ) + "###Ready Check and Alliance Debug Data", ref mDebugWindowVisible ) )
 			{
+				ImGui.PushFont( UiBuilder.MonoFont );
 				unsafe
 				{
 					if( (IntPtr)FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance() == IntPtr.Zero )
@@ -334,6 +335,7 @@ namespace ReadyCheckHelper
 						ImGui.Columns();
 					}
 				}
+				ImGui.PopFont();
 			}
 
 			//	We're done.
@@ -352,6 +354,7 @@ namespace ReadyCheckHelper
 			ImGui.SetNextWindowSizeConstraints( new Vector2( 375, 340 ) * ImGui.GetIO().FontGlobalScale, new Vector2( float.MaxValue, float.MaxValue ) );
 			if( ImGui.Begin( Loc.Localize( "Window Title: Raw Ready Check Data", "Debug: Raw Ready Check Data" ) + "###Raw Ready Check Data", ref mDebugRawWindowVisible ) )
 			{
+				ImGui.PushFont( UiBuilder.MonoFont );
 				ImGui.Text( "Early object bytes:" );
 				byte[] readyCheckObjectBytes = null;
 				if( MemoryHandler.DEBUG_GetRawReadyCheckObjectStuff( out readyCheckObjectBytes ) )
@@ -392,6 +395,7 @@ namespace ReadyCheckHelper
 				{
 					ImGui.Text( "Raw ready check data is unavailable, most likely due to not yet having located the ready check object." );
 				}
+				ImGui.PopFont();
 			}
 
 			//	We're done.
@@ -410,6 +414,7 @@ namespace ReadyCheckHelper
 			ImGui.SetNextWindowSizeConstraints( new Vector2( 375, 340 ) * ImGui.GetIO().FontGlobalScale, new Vector2( float.MaxValue, float.MaxValue ) );
 			if( ImGui.Begin( Loc.Localize( "Window Title: Processed Ready Check Data", "Debug: Processed Ready Check Data" ) + "###Processed Ready Check Data", ref mDebugProcessedWindowVisible ) )
 			{
+				ImGui.PushFont( UiBuilder.MonoFont );
 				var list = mPlugin.GetProcessedReadyCheckData();
 				if( list != null )
 				{
@@ -423,6 +428,7 @@ namespace ReadyCheckHelper
 				{
 					DebugProcessedWindowVisible = false;
 				}
+				ImGui.PopFont();
 			}
 
 			//	We're done.
