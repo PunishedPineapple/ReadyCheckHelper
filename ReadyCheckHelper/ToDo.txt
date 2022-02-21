@@ -3,12 +3,20 @@
 
 Bugs:
 -In crossworld party, CID in the ready check data becomes zero if a person DCs, making the existing logic not work in that case.  Maybe cache the IDs at the start of a ready check?
+	-This was only observed once, and in passing, so may have been misunderstood.  Keep an eye out for it.
+
+-Overlay is not correct when someone responds at the very last instant.
+	-Maybe just keep processing for half a second after the ready check is finished, but what is the game doing?  How is data in the ready check window actually populated?
+	-This probably actually isn't the reason for the display issue, which was likely fixed with the change to checking content ID in HudManager instead of object ID when object ID is invalid.
+
+-Cross-world alliance drawing still occasionally crashes.
+	-Commented out this feature, but we still need to look into it.
 
 
 Priority:
 	Drawing on party/alliance lists:
 		-Dirty the data when the party changes.
-		-Add option for top or bottom placement of icon positioning.  (Or user-configurable offsets)
+		-Add option for top or bottom placement of icon positioning.  (Or user-configurable offsets/scales)
 		-Find better unknown icon texture.
 
 	Debug stuff:
