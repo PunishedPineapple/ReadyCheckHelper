@@ -254,6 +254,7 @@ namespace ReadyCheckHelper
 							ImGui.Text( $"Number of Party Members (Group {i}): {FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.GetGroupMemberCount( i )}" );
 						}
 						ImGui.Text( $"Ready check is active: {mPlugin.ReadyCheckActive}" );
+						ImGui.Text( $"Hud Agent Address: 0x{mHudManager._hudAgentPtr:X16}" );
 						if( ImGui.Button( "Show/Hide Raw Readycheck Data" ) ) DebugRawWindowVisible = !DebugRawWindowVisible;
 						if( ImGui.Button( "Show/Hide Processed Readycheck Data" ) ) DebugProcessedWindowVisible = !DebugProcessedWindowVisible;
 						ImGui.Checkbox( "Debug Drawing on Party List", ref mDEBUG_DrawPlaceholderData );
@@ -279,7 +280,7 @@ namespace ReadyCheckHelper
 						ImGui.Text( "Ready Check Data:" );
 						for( int i = 0; i < readyCheckdata.Length; ++i )
 						{
-							ImGui.Text( $"ID: {readyCheckdata[i].ID.ToString( "X16" )}, State: {readyCheckdata[i].ReadyFlag}" );
+							ImGui.Text( $"ID: {readyCheckdata[i].ID:X16}, State: {readyCheckdata[i].ReadyFlag}" );
 						}
 						ImGui.NextColumn();
 						ImGui.Text( "Party Data:" );
@@ -292,7 +293,7 @@ namespace ReadyCheckHelper
 								name = name.Substring( 0, name.IndexOf( '\0' ) );
 
 								string classJobAbbr = JobDict.TryGetValue( pGroupMember->ClassJob, out classJobAbbr ) ? classJobAbbr : "ERR";
-								ImGui.Text( $"Job: {classJobAbbr}, OID: {pGroupMember->ObjectID.ToString( "X8" )}, CID: {pGroupMember->ContentID.ToString( "X16" )}, Name: {name}" );
+								ImGui.Text( $"Job: {classJobAbbr}, OID: {pGroupMember->ObjectID:X8}, CID: {pGroupMember->ContentID:X16}, Name: {name}" );
 							}
 							else
 							{
@@ -308,7 +309,7 @@ namespace ReadyCheckHelper
 								name = name.Substring( 0, name.IndexOf( '\0' ) );
 
 								string classJobAbbr = JobDict.TryGetValue( pGroupMember->ClassJob, out classJobAbbr ) ? classJobAbbr : "ERR";
-								ImGui.Text( $"Job: {classJobAbbr}, OID: {pGroupMember->ObjectID.ToString( "X8" )}, CID: {pGroupMember->ContentID.ToString( "X16" )}, Name: {name}" );
+								ImGui.Text( $"Job: {classJobAbbr}, OID: {pGroupMember->ObjectID:X8}, CID: {pGroupMember->ContentID:X16}, Name: {name}" );
 							}
 							else
 							{
@@ -326,7 +327,7 @@ namespace ReadyCheckHelper
 								{
 									string name = System.Text.Encoding.UTF8.GetString( pGroupMember->Name, 30 );	//***** TODO: How to get fixed buffer lenghth instead of magic numbering it here? *****
 									name = name.Substring( 0, name.IndexOf( '\0' ) );
-									ImGui.Text( $"Group: {pGroupMember->GroupIndex}, OID: {pGroupMember->ObjectId.ToString( "X8" )}, CID: {pGroupMember->ContentId.ToString( "X16" )}, Name: {name}" );
+									ImGui.Text( $"Group: {pGroupMember->GroupIndex}, OID: {pGroupMember->ObjectId:X8}, CID: {pGroupMember->ContentId:X16}, Name: {name}" );
 								}
 							}
 						}
@@ -383,7 +384,7 @@ namespace ReadyCheckHelper
 					for( int i = 0; i < rawData.Length; ++i )
 					{
 						if( i % 8 > 0 ) ImGui.SameLine();
-						ImGui.Text( $"{rawData[i].ToString( "X16" )} " );
+						ImGui.Text( $"{rawData[i]:X16} " );
 						
 					}
 				}
@@ -505,30 +506,47 @@ namespace ReadyCheckHelper
 											{
 												DrawOnPartyList( result.MemberIndex, result.ReadyState, pPartyList, ImGui.GetWindowDrawList() );
 											}
-											else if( result.GroupIndex >= 1 && (IntPtr)pCrossWorldAllianceList != IntPtr.Zero && pCrossWorldAllianceList->IsVisible )
+											//***** TODO: Uncomment this when we can figure out what is causing it to occasionally crash. *****
+											/*else if( result.GroupIndex >= 1 && (IntPtr)pCrossWorldAllianceList != IntPtr.Zero && pCrossWorldAllianceList->IsVisible )
 											{
 												DrawOnCrossWorldAllianceList( result.GroupIndex, result.MemberIndex, result.ReadyState, pAlliance1List, ImGui.GetWindowDrawList() );
-											}
+											}*/
 										}
 									}
 									else
 									{
 										foreach( var result in data )
 										{
-											var group = mHudManager.FindGroupMemberById( result.ObjectID );
-											if( group != null )
+											//***** TODO: If an overworld alliance is still possible, this hack will not be good enough. *****
+											//	HudManager may or may not have an object ID for a party member if people are in different zones in a same-world party, but it seems we get the content ID in that case.
+											if( result.ObjectID is 0 or 0xE0000000 )
 											{
-												if( group.Value.groupIdx == 0 && (IntPtr)pPartyList != IntPtr.Zero && pPartyList->IsVisible )
+												if( result.ContentID != 0 )
 												{
-													DrawOnPartyList( group.Value.idx, result.ReadyState, pPartyList, ImGui.GetWindowDrawList() );
+													var idx = mHudManager.FindPartyMemberByCID( result.ContentID );
+													if( idx != null )
+													{
+														DrawOnPartyList( idx.Value, result.ReadyState, pPartyList, ImGui.GetWindowDrawList() );
+													}
 												}
-												else if( group.Value.groupIdx == 1 && (IntPtr)pAlliance1List != IntPtr.Zero && pAlliance1List->IsVisible )
+											}
+											else
+											{
+												var group = mHudManager.FindGroupMemberByOID( result.ObjectID );
+												if( group != null )
 												{
-													DrawOnAllianceList( group.Value.idx, result.ReadyState, pAlliance1List, ImGui.GetWindowDrawList() );
-												}
-												else if( group.Value.groupIdx == 2 && (IntPtr)pAlliance2List != IntPtr.Zero && pAlliance2List->IsVisible )
-												{
-													DrawOnAllianceList( group.Value.idx, result.ReadyState, pAlliance2List, ImGui.GetWindowDrawList() );
+													if( group.Value.groupIdx == 0 && (IntPtr)pPartyList != IntPtr.Zero && pPartyList->IsVisible )
+													{
+														DrawOnPartyList( group.Value.idx, result.ReadyState, pPartyList, ImGui.GetWindowDrawList() );
+													}
+													else if( group.Value.groupIdx == 1 && (IntPtr)pAlliance1List != IntPtr.Zero && pAlliance1List->IsVisible )
+													{
+														DrawOnAllianceList( group.Value.idx, result.ReadyState, pAlliance1List, ImGui.GetWindowDrawList() );
+													}
+													else if( group.Value.groupIdx == 2 && (IntPtr)pAlliance2List != IntPtr.Zero && pAlliance2List->IsVisible )
+													{
+														DrawOnAllianceList( group.Value.idx, result.ReadyState, pAlliance2List, ImGui.GetWindowDrawList() );
+													}
 												}
 											}
 										}
