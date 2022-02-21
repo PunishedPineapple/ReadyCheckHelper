@@ -96,10 +96,11 @@ namespace ReadyCheckHelper
         private const int AllianceMemberOffset = 0x0D24;
         private const int AllianceSizeOffset   = 0x0DC4;
         private const int GroupMemberSize      = 0x20;
-        private const int GroupMemberIdOffset  = 0x10;
+        private const int GroupMemberOIDOffset = 0x10;
+        private const int GroupMemberCIDOffset = 0x8;
 
         private readonly Hook<UpdatePartyDelegate> _updatePartyHook;
-        private          IntPtr                    _hudAgentPtr = IntPtr.Zero;
+        public IntPtr _hudAgentPtr { get; private set; } = IntPtr.Zero;
 
         public HudManager( SigScanner sigScanner )
         {
@@ -110,14 +111,14 @@ namespace ReadyCheckHelper
         private readonly int[,] _idOffsets =
         {
             {
-                GroupMemberOffset + 0 * GroupMemberSize + GroupMemberIdOffset,
-                GroupMemberOffset + 1 * GroupMemberSize + GroupMemberIdOffset,
-                GroupMemberOffset + 2 * GroupMemberSize + GroupMemberIdOffset,
-                GroupMemberOffset + 3 * GroupMemberSize + GroupMemberIdOffset,
-                GroupMemberOffset + 4 * GroupMemberSize + GroupMemberIdOffset,
-                GroupMemberOffset + 5 * GroupMemberSize + GroupMemberIdOffset,
-                GroupMemberOffset + 6 * GroupMemberSize + GroupMemberIdOffset,
-                GroupMemberOffset + 7 * GroupMemberSize + GroupMemberIdOffset,
+                GroupMemberOffset + 0 * GroupMemberSize + GroupMemberOIDOffset,
+                GroupMemberOffset + 1 * GroupMemberSize + GroupMemberOIDOffset,
+                GroupMemberOffset + 2 * GroupMemberSize + GroupMemberOIDOffset,
+                GroupMemberOffset + 3 * GroupMemberSize + GroupMemberOIDOffset,
+                GroupMemberOffset + 4 * GroupMemberSize + GroupMemberOIDOffset,
+                GroupMemberOffset + 5 * GroupMemberSize + GroupMemberOIDOffset,
+                GroupMemberOffset + 6 * GroupMemberSize + GroupMemberOIDOffset,
+                GroupMemberOffset + 7 * GroupMemberSize + GroupMemberOIDOffset,
 
                 AllianceMemberOffset + 0 * 4,
                 AllianceMemberOffset + 1 * 4,
@@ -137,10 +138,10 @@ namespace ReadyCheckHelper
                 AllianceMemberOffset + 15 * 4,
             },
             {
-                GroupMemberOffset + 0 * GroupMemberSize + GroupMemberIdOffset,
-                GroupMemberOffset + 1 * GroupMemberSize + GroupMemberIdOffset,
-                GroupMemberOffset + 2 * GroupMemberSize + GroupMemberIdOffset,
-                GroupMemberOffset + 3 * GroupMemberSize + GroupMemberIdOffset,
+                GroupMemberOffset + 0 * GroupMemberSize + GroupMemberOIDOffset,
+                GroupMemberOffset + 1 * GroupMemberSize + GroupMemberOIDOffset,
+                GroupMemberOffset + 2 * GroupMemberSize + GroupMemberOIDOffset,
+                GroupMemberOffset + 3 * GroupMemberSize + GroupMemberOIDOffset,
 
                 AllianceMemberOffset + 0 * 4,
                 AllianceMemberOffset + 1 * 4,
@@ -177,7 +178,7 @@ namespace ReadyCheckHelper
         public bool IsGroup
             => GroupSize == 0;
 
-        public (int groupIdx, int idx)? FindGroupMemberById( uint actorId )
+        public (int groupIdx, int idx)? FindGroupMemberByOID( uint objectId )
         {
             if( _hudAgentPtr == IntPtr.Zero )
                 return null;
@@ -199,8 +200,38 @@ namespace ReadyCheckHelper
             for( var i = 0; i < count; ++i )
             {
                 var id = *(uint*)(_hudAgentPtr + _idOffsets[pvp, i]);
-                if( id == actorId )
+                if( id == objectId )
                     return (i / groupSize, i % groupSize);
+            }
+
+            return null;
+        }
+
+        //  This is a hack job, but I just want to be done at this point.
+        public int? FindPartyMemberByCID( UInt64 contentID )
+        {
+            if( _hudAgentPtr == IntPtr.Zero )
+                return null;
+
+            var groupSize = GroupSize;
+            int numGroups;
+            if( groupSize == 0 )
+            {
+                numGroups = 1;
+                groupSize = 8;
+            }
+            else
+            {
+                numGroups = groupSize == 4 ? 6 : 3;
+            }
+
+            var count = numGroups * groupSize;
+            var pvp   = groupSize == 4 ? 1 : 0;
+            for( var i = 0; i < groupSize; ++i )
+            {
+                var id = *(UInt64*)(_hudAgentPtr + _idOffsets[pvp, i] + GroupMemberCIDOffset - GroupMemberOIDOffset);
+                if( id == contentID )
+                    return i % groupSize;
             }
 
             return null;
