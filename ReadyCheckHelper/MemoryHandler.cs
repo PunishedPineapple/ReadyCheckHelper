@@ -25,14 +25,6 @@ namespace ReadyCheckHelper
 			//	Get Function Pointers, etc.
 			try
 			{
-				//	When you start a ready check.
-				mfpOnReadyCheckBegin = sigScanner.ScanText( "40 ?? 48 83 ?? ?? ?? B9 ?? ?? ?? ?? ?? 48 8B ?? ?? 41 ?? ?? ?? ?? ?? 75" );
-				if( mfpOnReadyCheckBegin != IntPtr.Zero )
-				{
-					mReadyCheckBeginHook = new Hook<ReadyCheckFuncDelegate>( mfpOnReadyCheckBegin, mdReadyCheckBegin );
-					mReadyCheckBeginHook.Enable();
-				}
-
 				//	When a ready check has been initiated by anyone.
 				mfpOnReadyCheckInitiated = sigScanner.ScanText( "40 ?? 48 83 ?? ?? 48 8B ?? E8 ?? ?? ?? ?? 48 ?? ?? ?? 33 C0 ?? 89" );
 				if( mfpOnReadyCheckInitiated != IntPtr.Zero )
@@ -57,27 +49,16 @@ namespace ReadyCheckHelper
 
 		public static void Uninit()
 		{
-			mReadyCheckBeginHook.Disable();
 			mReadyCheckInitiatedHook.Disable();
 			mReadyCheckEndHook.Disable();
-			mReadyCheckBeginHook.Dispose();
 			mReadyCheckInitiatedHook.Dispose();
 			mReadyCheckEndHook.Dispose();
-			mReadyCheckBeginHook = null;
 			mReadyCheckEndHook = null;
 			mpReadyCheckObject = IntPtr.Zero;
 			lock( mReadyCheckArrayLockObj )
 			{
 				mRawReadyCheckArray = null;
 			}
-		}
-
-		private static void ReadyCheckBeginDetour( IntPtr ptr )
-		{
-			mReadyCheckBeginHook.Original( ptr );
-			PluginLog.LogInformation( $"Ready check started by self with object location: 0x{ptr.ToString( "X" )}" );
-			mpReadyCheckObject = ptr;
-			IsReadyCheckHappening = true;
 		}
 
 		private static void ReadyCheckInitiatedDetour( IntPtr ptr )
@@ -176,10 +157,6 @@ namespace ReadyCheckHelper
 
 		//	Delgates
 		private delegate void ReadyCheckFuncDelegate( IntPtr ptr );
-
-		private static ReadyCheckFuncDelegate mdReadyCheckBegin = new ReadyCheckFuncDelegate( ReadyCheckBeginDetour );
-		private static IntPtr mfpOnReadyCheckBegin = IntPtr.Zero;
-		private static Hook<ReadyCheckFuncDelegate> mReadyCheckBeginHook;
 
 		private static ReadyCheckFuncDelegate mdReadyCheckInitiated = new ReadyCheckFuncDelegate( ReadyCheckInitiatedDetour );
 		private static IntPtr mfpOnReadyCheckInitiated = IntPtr.Zero;
