@@ -84,27 +84,32 @@ namespace ReadyCheckHelper
 			if( ImGui.Begin( Loc.Localize( "Window Title: Config", "Ready Check Helper Settings" ) + "###Ready Check Helper Settings", ref mSettingsWindowVisible,
 				ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse ) )
 			{
-				ImGui.Text( Loc.Localize( "Config Option: Max Names in Chat", "Maximum number of names to show in chat:" ) );
-				ImGui.SliderInt( "##MaxUnreadyNamesToShowInChat", ref mConfiguration.mMaxUnreadyToListInChat, 1, 48 );
+				ImGui.Checkbox( Loc.Localize( "Config Option: Print Names of Unready in Chat", "Show the names of those not ready in the chat window." ) + "###List unready names in chat.", ref mConfiguration.mShowReadyCheckResultsInChat );
 
-				ImGui.Spacing();
-				ImGui.Spacing();
-				ImGui.Spacing();
-				ImGui.Spacing();
-				ImGui.Spacing();
+				if( mConfiguration.ShowReadyCheckResultsInChat )
+				{
+					ImGui.Spacing();
+
+					ImGui.Indent();
+					ImGui.Text( Loc.Localize( "Config Option: Max Names in Chat", "Maximum number of names to show in chat:" ) );
+					ImGui.SliderInt( "##MaxUnreadyNamesToShowInChat", ref mConfiguration.mMaxUnreadyToListInChat, 1, 48 );
+					ImGui.Unindent();
+
+					ImGui.Spacing();
+					ImGui.Spacing();
+					ImGui.Spacing();
+					ImGui.Spacing();
+					ImGui.Spacing();
+				}
 
 				ImGui.Checkbox( Loc.Localize( "Config Option: Draw on Party Alliance Lists", "Draw ready check on party/alliance lists." ) + "###Draw ready check on party/alliance lists.", ref mConfiguration.mShowReadyCheckOnPartyAllianceList );
 
 				if( mConfiguration.ShowReadyCheckOnPartyAllianceList )
 				{
 					ImGui.Spacing();
-					ImGui.Spacing();
-					ImGui.Spacing();
-					ImGui.Spacing();
-					ImGui.Spacing();
 
-					ImGui.Text( Loc.Localize( "Config Option: Clear Party Alliance List Settings", "Clear ready check from party/alliance lists:" ) );
 					ImGui.Indent();
+					ImGui.Text( Loc.Localize( "Config Option: Clear Party Alliance List Settings", "Clear ready check from party/alliance lists:" ) );
 					ImGui.Checkbox( Loc.Localize( "Config Option: Clear Party Alliance List upon Entering Combat", "Upon entering combat." ) + "###Upon entering combat.", ref mConfiguration.mClearReadyCheckOverlayInCombat );
 					ImGui.Checkbox( Loc.Localize( "Config Option: Clear Party Alliance List upon Entering Instance", "Upon entering instance." ) + "###Upon entering instance.", ref mConfiguration.mClearReadyCheckOverlayEnteringInstance );
 					ImGui.Checkbox( Loc.Localize( "Config Option: Clear Party Alliance List upon Enteringing Combat in Instance", "Upon entering combat while in instance." ) + "###Upon entering combat while in instance.", ref mConfiguration.mClearReadyCheckOverlayInCombatInInstancedCombat );
@@ -255,10 +260,25 @@ namespace ReadyCheckHelper
 							ImGui.Text( $"Number of Party Members (Group {i}): {FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.GetGroupMemberCount( i )}" );
 						}
 						ImGui.Text( $"Ready check is active: {mPlugin.ReadyCheckActive}" );
+						ImGui.Spacing();
+						ImGui.Spacing();
+						ImGui.Spacing();
+						ImGui.Text( $"Ready Check Object Address: 0x{MemoryHandler.DEBUG_GetReadyCheckObjectAddress():X16}" );
 						ImGui.Text( $"Hud Agent Address: 0x{mHudManager._hudAgentPtr:X16}" );
-						if( ImGui.Button( "Show/Hide Raw Readycheck Data" ) ) DebugRawWindowVisible = !DebugRawWindowVisible;
-						if( ImGui.Button( "Show/Hide Processed Readycheck Data" ) ) DebugProcessedWindowVisible = !DebugProcessedWindowVisible;
+						ImGui.Checkbox( "Show Raw Readycheck Data", ref mDebugRawWindowVisible );
+						ImGui.Checkbox( "Show Processed Readycheck Data", ref mDebugProcessedWindowVisible );
 						ImGui.Checkbox( "Debug Drawing on Party List", ref mDEBUG_DrawPlaceholderData );
+						ImGui.Checkbox( "Allow Cross-world Alliance List Drawing", ref mDEBUG_AllowCrossWorldAllianceDrawing );
+						if( ImGui.Button( "Export Localizable Strings" ) )
+						{
+							string pwd = Directory.GetCurrentDirectory();
+							Directory.SetCurrentDirectory( mPluginInterface.AssemblyLocation.DirectoryName );
+							Loc.ExportLocalizable();
+							Directory.SetCurrentDirectory( pwd );
+						}
+						ImGui.Spacing();
+						ImGui.Spacing();
+						ImGui.Spacing();
 						ImGui.PushStyleColor( ImGuiCol.Text, 0xee4444ff );
 						ImGui.Text( "Ready Check Object Address:" );
 						ImGuiHelpMarker( Loc.Localize( "Help: Debug Set Object Address Warning", "DO NOT TOUCH THIS UNLESS YOU KNOW EXACTLY WHAT YOU'RE DOING AND WHY; THE ABSOLUTE BEST CASE IS A PLUGIN CRASH." ) );
@@ -270,13 +290,6 @@ namespace ReadyCheckHelper
 							if( isValidPointer ) MemoryHandler.DEBUG_SetReadyCheckObjectAddress( ptr );
 						}
 						ImGui.PopStyleColor();
-						if( ImGui.Button( "Export Localizable Strings" ) )
-						{
-							string pwd = Directory.GetCurrentDirectory();
-							Directory.SetCurrentDirectory( mPluginInterface.AssemblyLocation.DirectoryName );
-							Loc.ExportLocalizable();
-							Directory.SetCurrentDirectory( pwd );
-						}
 						ImGui.NextColumn();
 						ImGui.Text( "Ready Check Data:" );
 						for( int i = 0; i < readyCheckdata.Length; ++i )
@@ -420,7 +433,7 @@ namespace ReadyCheckHelper
 				{
 					foreach( var player in list )
 					{
-						ImGui.Text( $"OID: {player.ObjectID}, CID: {player.ContentID}, Group: {player.GroupIndex}, Index: {player.MemberIndex}, State: {(byte)player.ReadyState}, Name: {player.Name}" );
+						ImGui.Text( $"OID: {player.ObjectID:X8}, CID: {player.ContentID:X16}, Group: {player.GroupIndex}, Index: {player.MemberIndex}, State: {(byte)player.ReadyState}, Name: {player.Name}" );
 					}
 				}
 
@@ -494,58 +507,62 @@ namespace ReadyCheckHelper
 					else
 					{
 						//	For finding out order in the party list, use HudManager for regular parties/alliances.  Cross-world seems to be just the order that the proxy has them indexed.
-						if( (IntPtr)FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance() != IntPtr.Zero )
+						if( (IntPtr)FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance() != IntPtr.Zero &&
+							(IntPtr)FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance() != IntPtr.Zero )
 						{
-							if( (IntPtr)FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance() != IntPtr.Zero )
+							var data = mPlugin.GetProcessedReadyCheckData();
+							if( data != null )
 							{
-								var data = mPlugin.GetProcessedReadyCheckData();
-								if( data != null )
+								//	We're only in a crossworld party if the cross realm proxy says we are; however, it can say we're cross-realm when
+								//	we're in a regular party if we entered an instance as a cross-world party, so account for that too.
+								if( FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->MemberCount > 0  )
 								{
-									//	We're only in a crossworld party if the cross realm proxy says we are; however, it can say we're cross-realm when
-									//	we're in a regular party if we entered an instance as a cross-world party, so account for that too.
-									if( FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance()->IsCrossRealm > 0 &&
-										FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->MemberCount < 1 )
+									foreach( var result in data )
 									{
-										foreach( var result in data )
+										if( result.GroupIndex == 0 )
 										{
-											if( result.GroupIndex == 0 && (IntPtr)pPartyList != IntPtr.Zero && pPartyList->IsVisible )
+											bool resultFound = false;
+											if( result.ContentID != 0 )
 											{
-												DrawOnPartyList( result.MemberIndex, result.ReadyState, pPartyList, ImGui.GetWindowDrawList() );
-											}
-											//***** TODO: Uncomment this when we can figure out what is causing it to occasionally crash. *****
-											/*else if( result.GroupIndex >= 1 && (IntPtr)pCrossWorldAllianceList != IntPtr.Zero && pCrossWorldAllianceList->IsVisible )
-											{
-												DrawOnCrossWorldAllianceList( result.GroupIndex, result.MemberIndex, result.ReadyState, pAlliance1List, ImGui.GetWindowDrawList() );
-											}*/
-										}
-									}
-									else
-									{
-										foreach( var result in data )
-										{
-											//***** TODO: If an overworld alliance is still possible, this hack will not be good enough. *****
-											//	HudManager may or may not have an object ID for a party member if people are in different zones in a same-world party, but it seems we get the content ID in that case.
-											if( result.ObjectID is 0 or 0xE0000000 )
-											{
-												if( result.ContentID != 0 )
+												var idx = mHudManager.FindPartyMemberByCID( result.ContentID );
+												if( idx != null )
 												{
-													var idx = mHudManager.FindPartyMemberByCID( result.ContentID );
-													if( idx != null )
+													resultFound = true;
+													if( (IntPtr)pPartyList != IntPtr.Zero && pPartyList->IsVisible )
 													{
 														DrawOnPartyList( idx.Value, result.ReadyState, pPartyList, ImGui.GetWindowDrawList() );
 													}
 												}
 											}
-											else
+											else if( result.ObjectID is not 0 and not 0xE0000000 )
 											{
 												var group = mHudManager.FindGroupMemberByOID( result.ObjectID );
 												if( group != null )
 												{
+													resultFound = true;
 													if( group.Value.groupIdx == 0 && (IntPtr)pPartyList != IntPtr.Zero && pPartyList->IsVisible )
 													{
 														DrawOnPartyList( group.Value.idx, result.ReadyState, pPartyList, ImGui.GetWindowDrawList() );
 													}
-													else if( group.Value.groupIdx == 1 && (IntPtr)pAlliance1List != IntPtr.Zero && pAlliance1List->IsVisible )
+												}
+											}
+												
+											if( !resultFound /*&& useStringComparisonFallback*/ )
+											{
+												//***** TODO: Do a fallback comparison by player name if we want to.  Need to investigate performance doing this. *****
+											}
+										}
+										//***** TODO: If an overworld alliance is still possible, what we have here will still not be good enough. *****
+										else
+										{
+											bool resultFound = false;
+											if( result.ObjectID is not 0 and not 0xE0000000 )
+											{
+												var group = mHudManager.FindGroupMemberByOID( result.ObjectID );
+												if( group != null )
+												{
+													resultFound = true;
+													if( group.Value.groupIdx == 1 && (IntPtr)pAlliance1List != IntPtr.Zero && pAlliance1List->IsVisible )
 													{
 														DrawOnAllianceList( group.Value.idx, result.ReadyState, pAlliance1List, ImGui.GetWindowDrawList() );
 													}
@@ -555,6 +572,26 @@ namespace ReadyCheckHelper
 													}
 												}
 											}
+
+											if( !resultFound /*&& useStringComparisonFallback*/ )
+											{
+												//***** TODO: Do a fallback comparison by player name if we want to.  Need to investigate performance doing this. *****
+											}
+										}
+									}
+								}
+								else if( FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance()->IsCrossRealm > 0 )
+								{
+									foreach( var result in data )
+									{
+										if( result.GroupIndex == 0 && (IntPtr)pPartyList != IntPtr.Zero && pPartyList->IsVisible )
+										{
+											DrawOnPartyList( result.MemberIndex, result.ReadyState, pPartyList, ImGui.GetWindowDrawList() );
+										}
+										else if( result.GroupIndex >= 1 && (IntPtr)pCrossWorldAllianceList != IntPtr.Zero && pCrossWorldAllianceList->IsVisible )
+										{
+											//***** TODO: Remove the debug conditional on this when we can figure out what is causing it to occasionally crash. *****
+											if( mDEBUG_AllowCrossWorldAllianceDrawing ) DrawOnCrossWorldAllianceList( result.GroupIndex, result.MemberIndex, result.ReadyState, pAlliance1List, ImGui.GetWindowDrawList() );
 										}
 									}
 								}
@@ -718,6 +755,7 @@ namespace ReadyCheckHelper
 		protected bool ReadyCheckValid { get; set; }
 		protected bool mDEBUG_DrawPlaceholderData = false;
 		protected string mDEBUG_ReadyCheckObjectAddressInputString = "";
+		protected bool mDEBUG_AllowCrossWorldAllianceDrawing = false;
 
 		//	Need a real backing field on the following properties for use with ImGui.
 		protected bool mSettingsWindowVisible = false;
