@@ -16,12 +16,6 @@ namespace ReadyCheckHelper
 				throw new Exception( "Error in \"MemoryHandler.Init()\": A null SigScanner was passed!" );
 			}
 
-			//	Create underlying array.
-			lock( mReadyCheckArrayLockObj )
-			{
-				mRawReadyCheckArray = new IntPtr[mArrayLength];
-			}
-
 			//	Get Function Pointers, etc.
 			try
 			{
@@ -55,16 +49,12 @@ namespace ReadyCheckHelper
 			mReadyCheckEndHook.Dispose();
 			mReadyCheckEndHook = null;
 			mpReadyCheckObject = IntPtr.Zero;
-			lock( mReadyCheckArrayLockObj )
-			{
-				mRawReadyCheckArray = null;
-			}
 		}
 
 		private static void ReadyCheckInitiatedDetour( IntPtr ptr )
 		{
 			mReadyCheckInitiatedHook.Original( ptr );
-			PluginLog.LogInformation( $"Ready check initiated with object location: 0x{ptr.ToString( "X" )}" );
+			PluginLog.LogDebug( $"Ready check initiated with object location: 0x{ptr.ToString( "X" )}" );
 			mpReadyCheckObject = ptr;
 			IsReadyCheckHappening = true;
 			if( ReadyCheckInitiatedEvent != null ) ReadyCheckInitiatedEvent( null, EventArgs.Empty );
@@ -74,7 +64,7 @@ namespace ReadyCheckHelper
 		{
 			mReadyCheckEndHook.Original( ptr );
 			mpReadyCheckObject = ptr;   //	Do this for now because we don't get the ready check begin function called if we don't initiate ready check ourselves.
-			PluginLog.LogInformation( $"Ready check completed with object location: 0x{ptr.ToString( "X" )}" );
+			PluginLog.LogDebug( $"Ready check completed with object location: 0x{ptr.ToString( "X" )}" );
 			IsReadyCheckHappening = false;
 			UpdateRawReadyCheckData();  //	Update our copy of the data one last time.
 			//***** TODO: Should we uncomment the next line now? The ready check object never seems to move, but we can't guarantee that...It is nice to keep it around for debugging. Maybe at the end of this function, save it off as a debug only address used only by the debug functions? *****
@@ -84,18 +74,23 @@ namespace ReadyCheckHelper
 
 		private static bool CanGetRawReadyCheckData()
 		{
-			return mpReadyCheckObject != IntPtr.Zero && mRawReadyCheckArray != null;
+			return mpReadyCheckObject != IntPtr.Zero;
 		}
 
 		private static void UpdateRawReadyCheckData()
 		{
-			lock( mReadyCheckArrayLockObj )
+			lock( mRawReadyCheckArray.SyncRoot )
 			{
 				if( CanGetRawReadyCheckData() )
 				{
-					Marshal.Copy( new IntPtr( mpReadyCheckObject.ToInt64() + mArrayOffset ), mRawReadyCheckArray, 0, mArrayLength );
+					Marshal.Copy( new IntPtr( mpReadyCheckObject.ToInt64() + mArrayOffset ), mRawReadyCheckArray, 0, mRawReadyCheckArray.Length );
 				}
 			}
+		}
+
+		public static IntPtr DEBUG_GetReadyCheckObjectAddress()
+		{
+			return mpReadyCheckObject;
 		}
 
 		public static void DEBUG_SetReadyCheckObjectAddress( IntPtr ptr )
@@ -117,7 +112,7 @@ namespace ReadyCheckHelper
 		{
 			rawDataArray = new IntPtr[mArrayLength];
 			UpdateRawReadyCheckData();
-			lock( mReadyCheckArrayLockObj )
+			lock( mRawReadyCheckArray.SyncRoot )
 			{
 				Array.Copy( mRawReadyCheckArray, rawDataArray, mArrayLength );
 			}
@@ -130,15 +125,12 @@ namespace ReadyCheckHelper
 
 			ReadyCheckInfo[] retVal = new ReadyCheckInfo[mArrayLength/2];
 
-			lock( mReadyCheckArrayLockObj )
+			lock( mRawReadyCheckArray.SyncRoot )
 			{
-				if( mRawReadyCheckArray != null )
+				for( int i = 0; i < retVal.Length; ++i )
 				{
-					for( int i = 0; i < retVal.Length; ++i )
-					{
-						retVal[i] = new ReadyCheckInfo( (ReadyCheckStateEnum)(mRawReadyCheckArray[i * 2 + 1].ToInt64() & 0xFF),
-														(UInt64)mRawReadyCheckArray[i * 2] );
-					}
+					retVal[i] = new ReadyCheckInfo( (ReadyCheckStateEnum)(mRawReadyCheckArray[i * 2 + 1].ToInt64() & 0xFF),
+													(UInt64)mRawReadyCheckArray[i * 2] );
 				}
 			}
 
@@ -151,7 +143,7 @@ namespace ReadyCheckHelper
 
 		//	Misc.
 		private static IntPtr mpReadyCheckObject;
-		private static IntPtr[] mRawReadyCheckArray; //Need to use IntPtr as the type here because of our marshaling options.  Can convert it later.
+		private static readonly IntPtr[] mRawReadyCheckArray = new IntPtr[mArrayLength]; //Need to use IntPtr as the type here because of our marshaling options.  Can convert it later.
 
 		public static bool IsReadyCheckHappening { get; private set; } = false;
 
@@ -169,9 +161,6 @@ namespace ReadyCheckHelper
 		//	Events
 		public static event EventHandler ReadyCheckInitiatedEvent;
 		public static event EventHandler ReadyCheckCompleteEvent;
-
-		//	Misc.
-		private static Object mReadyCheckArrayLockObj = new object();
 
 		public struct ReadyCheckInfo
 		{
