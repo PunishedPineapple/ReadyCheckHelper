@@ -22,6 +22,13 @@ namespace ReadyCheckHelper
 			set { mSuppressCommandLineResponses = value; }
 		}
 
+		public bool mShowReadyCheckResultsInChat = true;
+		public bool ShowReadyCheckResultsInChat
+		{
+			get { return mShowReadyCheckResultsInChat; }
+			set { mShowReadyCheckResultsInChat = value; }
+		}
+
 		public int mMaxUnreadyToListInChat = 3;
 		public int MaxUnreadyToListInChat
 		{
@@ -29,7 +36,7 @@ namespace ReadyCheckHelper
 			set { mMaxUnreadyToListInChat = value; }
 		}
 
-		public bool mShowReadyCheckOnPartyAllianceList = false;
+		public bool mShowReadyCheckOnPartyAllianceList = true;
 		public bool ShowReadyCheckOnPartyAllianceList
 		{
 			get { return mShowReadyCheckOnPartyAllianceList; }

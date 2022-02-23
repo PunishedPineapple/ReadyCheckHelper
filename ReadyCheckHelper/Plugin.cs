@@ -265,7 +265,10 @@ namespace ReadyCheckHelper
 			}
 
 			//	Print it to chat in the desired format.
-			ListUnreadyPlayersInChat( notReadyList );
+			if( mConfiguration.ShowReadyCheckResultsInChat )
+			{
+				ListUnreadyPlayersInChat( notReadyList );
+			}
 
 			//	Start a task to clean up the icons on the party chat after the configured amount of time.
 			if( mConfiguration.ClearReadyCheckOverlayAfterTime )
