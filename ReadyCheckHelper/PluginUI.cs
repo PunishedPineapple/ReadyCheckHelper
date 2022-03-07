@@ -17,7 +17,6 @@ using Dalamud.Game;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using CheapLoc;
 
-
 namespace ReadyCheckHelper
 {
 	// It is good to have this be disposable in general, in case you ever need it
@@ -269,6 +268,13 @@ namespace ReadyCheckHelper
 						ImGui.Checkbox( "Show Processed Readycheck Data", ref mDebugProcessedWindowVisible );
 						ImGui.Checkbox( "Debug Drawing on Party List", ref mDEBUG_DrawPlaceholderData );
 						ImGui.Checkbox( "Allow Cross-world Alliance List Drawing", ref mDEBUG_AllowCrossWorldAllianceDrawing );
+						{
+							if( ImGui.Button( "Test Chat Message" ) )
+							{
+								mPlugin.ListUnreadyPlayersInChat( new List<string>( LocalizationHelpers.TestNames.Take( mDEBUG_NumNamesToTestChatMessage ) ) );
+							}
+							ImGui.SliderInt( "Number of Test Names", ref mDEBUG_NumNamesToTestChatMessage, 1, LocalizationHelpers.TestNames.Length );
+						}
 						if( ImGui.Button( "Export Localizable Strings" ) )
 						{
 							string pwd = Directory.GetCurrentDirectory();
@@ -378,8 +384,8 @@ namespace ReadyCheckHelper
 						str += readyCheckObjectBytes[i].ToString( "X2" );
 						if( (i + 1) % 8 == 0 )
 						{
-							ImGui.Text( str );
-							str = " ";
+							ImGui.Text( str + " " );
+							str = "";
 							if( ( i + 1 ) % 64 > 0 ) ImGui.SameLine();
 						}
 					}
@@ -401,7 +407,6 @@ namespace ReadyCheckHelper
 					{
 						if( i % 8 > 0 ) ImGui.SameLine();
 						ImGui.Text( $"{rawData[i]:X16} " );
-						
 					}
 				}
 				else
@@ -756,6 +761,7 @@ namespace ReadyCheckHelper
 		protected bool mDEBUG_DrawPlaceholderData = false;
 		protected string mDEBUG_ReadyCheckObjectAddressInputString = "";
 		protected bool mDEBUG_AllowCrossWorldAllianceDrawing = false;
+		protected int mDEBUG_NumNamesToTestChatMessage = 5;
 
 		//	Need a real backing field on the following properties for use with ImGui.
 		protected bool mSettingsWindowVisible = false;

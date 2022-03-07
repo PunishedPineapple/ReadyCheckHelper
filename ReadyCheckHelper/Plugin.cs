@@ -100,13 +100,13 @@ namespace ReadyCheckHelper
 		protected void OnLanguageChanged( string langCode )
 		{
 			//***** TODO *****
-			var allowedLang = new List<string>{ /*"de", "ja", "fr", "it", "es"*/ };
+			var allowedLang = new List<string>{ /*"de", "ja", "fr", "it",*/ "es" };
 
 			PluginLog.Information( "Trying to set up Loc for culture {0}", langCode );
 
 			if( allowedLang.Contains( langCode ) )
 			{
-				Loc.Setup( File.ReadAllText( Path.Join( mPluginInterface.AssemblyLocation.FullName, $"loc_{langCode}.json" ) ) );
+				Loc.Setup( File.ReadAllText( Path.Join( Path.Join( mPluginInterface.AssemblyLocation.DirectoryName, "Resources\\Localization\\" ), $"loc_{langCode}.json" ) ) );
 			}
 			else
 			{
@@ -433,40 +433,35 @@ namespace ReadyCheckHelper
 			}
 		}
 
-		protected void ListUnreadyPlayersInChat( List<String> notReadyList )
+		public void ListUnreadyPlayersInChat( List<String> notReadyList )
 		{
 			if( notReadyList.Count > 0 )
 			{
-				//***** TODO: Localizing this part will probably just require a separate function for each of the four game languages due to grammar rules. *****
-				string notReadyString = "Not Ready: ";
-				for( int i = 0; i < notReadyList.Count; ++i )
+				//	Getting this from separate functions instead of just a localized string, since list construction may follow different rules in different languages.
+				string notReadyString = "";
+				switch( mClientState.ClientLanguage )
 				{
-					//	If there's only one person, just put their name.
-					if( notReadyList.Count == 1 )
-					{
-						notReadyString += notReadyList[i];
-					}
-					//	Once we've reached the max configured number of individual names to show.
-					else if( i >= mConfiguration.MaxUnreadyToListInChat )
-					{
-						notReadyString += $" and {notReadyList.Count - i} {(notReadyList.Count - i > 1 ? "others" : "other")}";
+					case Dalamud.ClientLanguage.Japanese:
+						notReadyString = LocalizationHelpers.ConstructNotReadyString_ja( notReadyList, mConfiguration.MaxUnreadyToListInChat );
 						break;
-					}
-					//	Grammar for showing the final name in a list.
-					else if( i == notReadyList.Count - 1 )
-					{
-						notReadyString += $" and {notReadyList[i]}";
-					}
-					//	Grammar for the first item if there will only be two items listed.
-					else if( i == 0 && ( notReadyList.Count == 2 || mConfiguration.MaxUnreadyToListInChat < 2 ) )
-					{
-						notReadyString += notReadyList[i];
-					}
-					//	Otherwise comma separate the list.
-					else
-					{
-						notReadyString += notReadyList[i] + ", ";
-					}
+					case Dalamud.ClientLanguage.English:
+						notReadyString = LocalizationHelpers.ConstructNotReadyString_en( notReadyList, mConfiguration.MaxUnreadyToListInChat );
+						break;
+					case Dalamud.ClientLanguage.German:
+						notReadyString = LocalizationHelpers.ConstructNotReadyString_de( notReadyList, mConfiguration.MaxUnreadyToListInChat );
+						break;
+					case Dalamud.ClientLanguage.French:
+						notReadyString = LocalizationHelpers.ConstructNotReadyString_fr( notReadyList, mConfiguration.MaxUnreadyToListInChat );
+						break;
+					/*case Dalamud.ClientLanguage.Korean:
+						notReadyString = LocalizationHelpers.ConstructNotReadyString_ko( notReadyList, mConfiguration.MaxUnreadyToListInChat );
+						break;
+					case Dalamud.ClientLanguage.Chinese:
+						notReadyString = LocalizationHelpers.ConstructNotReadyString_zh( notReadyList, mConfiguration.MaxUnreadyToListInChat );
+						break;*/
+					default:
+						notReadyString = LocalizationHelpers.ConstructNotReadyString_en( notReadyList, mConfiguration.MaxUnreadyToListInChat );
+						break;
 				}
 
 				//	If we don't delay the actual printing to chat, sometimes it comes out before the system message in the chat log.  I don't understand why it's an issue, but this is an easy kludge to make it work right consistently.
