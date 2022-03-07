@@ -14,6 +14,7 @@ using Dalamud.Data;
 using Dalamud.Game.Gui;
 using Dalamud.Interface;
 using Dalamud.Game;
+using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using CheapLoc;
 
@@ -309,9 +310,7 @@ namespace ReadyCheckHelper
 							var pGroupMember = FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->GetPartyMemberByIndex( i );
 							if( (IntPtr)pGroupMember != IntPtr.Zero )
 							{
-								string name = System.Text.Encoding.UTF8.GetString( pGroupMember->Name, 64 );    //***** TODO: How to get fixed buffer lenghth instead of magic numbering it here? *****
-								name = name.Substring( 0, name.IndexOf( '\0' ) );
-
+								string name = MemoryHelper.ReadSeStringNullTerminated( (IntPtr)pGroupMember->Name ).ToString();
 								string classJobAbbr = JobDict.TryGetValue( pGroupMember->ClassJob, out classJobAbbr ) ? classJobAbbr : "ERR";
 								ImGui.Text( $"Job: {classJobAbbr}, OID: {pGroupMember->ObjectID:X8}, CID: {pGroupMember->ContentID:X16}, Name: {name}" );
 							}
@@ -325,9 +324,7 @@ namespace ReadyCheckHelper
 							var pGroupMember = FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->GetAllianceMemberByIndex( i );
 							if( (IntPtr)pGroupMember != IntPtr.Zero )
 							{
-								string name = System.Text.Encoding.UTF8.GetString( pGroupMember->Name, 64 );    //***** TODO: How to get fixed buffer lenghth instead of magic numbering it here? *****
-								name = name.Substring( 0, name.IndexOf( '\0' ) );
-
+								string name = MemoryHelper.ReadSeStringNullTerminated( (IntPtr)pGroupMember->Name ).ToString();
 								string classJobAbbr = JobDict.TryGetValue( pGroupMember->ClassJob, out classJobAbbr ) ? classJobAbbr : "ERR";
 								ImGui.Text( $"Job: {classJobAbbr}, OID: {pGroupMember->ObjectID:X8}, CID: {pGroupMember->ContentID:X16}, Name: {name}" );
 							}
@@ -345,8 +342,7 @@ namespace ReadyCheckHelper
 								var pGroupMember = FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.GetGroupMember( (uint)j, i );
 								if( (IntPtr)pGroupMember != IntPtr.Zero )
 								{
-									string name = System.Text.Encoding.UTF8.GetString( pGroupMember->Name, 30 );	//***** TODO: How to get fixed buffer lenghth instead of magic numbering it here? *****
-									name = name.Substring( 0, name.IndexOf( '\0' ) );
+									string name = MemoryHelper.ReadSeStringNullTerminated( (IntPtr)pGroupMember->Name ).ToString();
 									ImGui.Text( $"Group: {pGroupMember->GroupIndex}, OID: {pGroupMember->ObjectId:X8}, CID: {pGroupMember->ContentId:X16}, Name: {name}" );
 								}
 							}

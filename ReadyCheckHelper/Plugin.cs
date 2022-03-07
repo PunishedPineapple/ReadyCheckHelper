@@ -11,6 +11,7 @@ using Dalamud.Game.Command;
 using Dalamud.Game.Gui;
 using Dalamud.Game;
 using Dalamud.Data;
+using Dalamud.Memory;
 using Dalamud.Logging;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
@@ -337,8 +338,7 @@ namespace ReadyCheckHelper
 							var pGroupMember = FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->GetAllianceMemberByGroupAndIndex( j, i );
 							if( (IntPtr)pGroupMember != IntPtr.Zero )
 							{
-								string name = System.Text.Encoding.UTF8.GetString( pGroupMember->Name, 64 );    //***** TODO: How to get fixed buffer lenghth instead of magic numbering it here? *****
-								name = name.Substring( 0, name.IndexOf( '\0' ) );
+								string name = MemoryHelper.ReadSeStringNullTerminated( (IntPtr)pGroupMember->Name ).ToString();
 								allianceMemberDict.TryAdd( pGroupMember->ObjectID, Tuple.Create( (UInt64)pGroupMember->ContentID, name, (byte)( j + 1 ), (byte)i ) );
 							}
 						}
@@ -354,8 +354,8 @@ namespace ReadyCheckHelper
 							var pFoundPartyMember = FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->GetPartyMemberByIndex( i );
 							if( (IntPtr)pFoundPartyMember != IntPtr.Zero )
 							{
-								string name = System.Text.Encoding.UTF8.GetString( pFoundPartyMember->Name, 64 );    //***** TODO: Magic Number *****
-								name = name.Substring( 0, name.IndexOf( '\0' ) );
+								string name = MemoryHelper.ReadSeStringNullTerminated( (IntPtr)pFoundPartyMember->Name ).ToString();
+
 								//	If it's us, we need to use the first entry in the ready check data.
 								if( pFoundPartyMember->ObjectID == mClientState.LocalPlayer?.ObjectId )
 								{
@@ -414,8 +414,7 @@ namespace ReadyCheckHelper
 						var pFoundPartyMember = FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.GetMemberByContentId( readyCheckEntry.ID );
 						if( (IntPtr)pFoundPartyMember != IntPtr.Zero )
 						{
-							string name = System.Text.Encoding.UTF8.GetString( pFoundPartyMember->Name, 30 );   //***** TODO: Magic Number *****
-							name = name.Substring( 0, name.IndexOf( '\0' ) );
+							string name = MemoryHelper.ReadSeStringNullTerminated( (IntPtr)pFoundPartyMember->Name ).ToString();
 							readyCheckProcessedList.Add( new CorrelatedReadyCheckEntry( name, pFoundPartyMember->ContentId, pFoundPartyMember->ObjectId, readyCheckEntry.ReadyFlag, pFoundPartyMember->GroupIndex, pFoundPartyMember->MemberIndex ) );
 						}
 					}
