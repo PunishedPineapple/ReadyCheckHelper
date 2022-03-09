@@ -1,5 +1,6 @@
 ﻿Maybe:
 -Check food durations for synced Extremes, Savages, and Ultimates when ready checking.
+-Add an alternate drawing mode that uses in-game UI elements for drawing on party list.
 
 Bugs:
 -In crossworld party, CID in the ready check data becomes zero if a person DCs, making the existing logic not work in that case.  Maybe cache the IDs at the start of a ready check?
@@ -21,7 +22,6 @@ Priority:
 
 	Debug stuff:
 		-Add rest of ready check object bytes to raw debug window.
-		-Monospace font.
 
 	Misc:
 		-Figure out if/how we can show the game's ready check window from the text link.
