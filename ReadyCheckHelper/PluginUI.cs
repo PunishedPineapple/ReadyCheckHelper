@@ -81,7 +81,7 @@ namespace ReadyCheckHelper
 				return;
 			}
 
-			if( ImGui.Begin( Loc.Localize( "Window Title: Config", "Ready Check Helper Settings" ) + "###Ready Check Helper Settings", ref mSettingsWindowVisible,
+			if( ImGui.Begin( Loc.Localize( "Window Title: Config", "Ready Check Helper Settings" ) + "###Ready Check Helper Settings",
 				ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse ) )
 			{
 				ImGui.Checkbox( Loc.Localize( "Config Option: Print Names of Unready in Chat", "Show the names of those not ready in the chat window." ) + "###List unready names in chat.", ref mConfiguration.mShowReadyCheckResultsInChat );
@@ -125,6 +125,11 @@ namespace ReadyCheckHelper
 				ImGui.Spacing();
 				ImGui.Spacing();
 
+				/*if( ImGui.Button( Loc.Localize( "Button: Save", "Save" ) + "###Save Button" ) )
+				{
+					mConfiguration.Save();
+				}
+				ImGui.SameLine();*/
 				if( ImGui.Button( Loc.Localize( "Button: Save and Close", "Save and Close" ) + "###Save and Close" ) )
 				{
 					mConfiguration.Save();
