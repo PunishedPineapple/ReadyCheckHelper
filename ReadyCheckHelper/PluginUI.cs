@@ -198,7 +198,7 @@ namespace ReadyCheckHelper
 								//	Probably don't need this, but tables are sometimes getting clobbered, so putting it here just in case that helps.
 								else
 								{
-									ImGui.Image( mUnknownStatusIconTexture.ImGuiHandle, new Vector2( 24 ), new Vector2( 0.0f ), new Vector2( 1.0f ), new Vector4( 0.0f ) );
+									ImGui.Text( " " );
 								}
 							}
 						}
