@@ -8,10 +8,7 @@
 		<Copyright>Copyright © PunishedPineapple 2021-2022</Copyright>
 		<PackageProjectUrl>https://github.com/PunishedPineapple/ReadyCheckHelper</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/PunishedPineapple/ReadyCheckHelper</RepositoryUrl>
-		<AssemblyVersion>1.0.0.0</AssemblyVersion>
-		<FileVersion>1.0.0.0</FileVersion>
 	</PropertyGroup>
-
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>

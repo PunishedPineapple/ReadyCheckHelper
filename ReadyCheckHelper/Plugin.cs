@@ -330,7 +330,7 @@ namespace ReadyCheckHelper
 					bool foundSelf = false;
 
 					//	Grab all of the alliance members here to make lookups easier since there's no function in client structs to get an alliance member by object ID.
-					Dictionary<UInt32, Tuple<UInt64, string, byte, byte>> allianceMemberDict = new Dictionary<UInt32, Tuple<UInt64, string, byte, byte>>();
+					var allianceMemberDict = new Dictionary<UInt32, Tuple<UInt64, string, byte, byte>>();
 					for( int j = 0; j < 2; ++j )
 					{
 						for( int i = 0; i < 8; ++i )
@@ -548,9 +548,9 @@ namespace ReadyCheckHelper
 		protected const string mTextCommandName = "/pready";
 		private readonly Dalamud.Game.Text.SeStringHandling.Payloads.DalamudLinkPayload mOpenReadyCheckWindowLink;
 
-		protected List<UInt32> mInstancedTerritories = new List<UInt32>();
+		protected List<UInt32> mInstancedTerritories = new();
 		protected List<CorrelatedReadyCheckEntry> mProcessedReadyCheckData;
-		protected Object mProcessedReadyCheckDataLockObj = new object();
+		protected Object mProcessedReadyCheckDataLockObj = new();
 		protected CancellationTokenSource mTimedOverlayCancellationSource = null;
 		public bool ReadyCheckActive { get; protected set; } = false;
 

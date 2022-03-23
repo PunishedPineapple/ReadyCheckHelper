@@ -268,8 +268,8 @@ namespace ReadyCheckHelper
 						ImGui.Spacing();
 						ImGui.Spacing();
 						ImGui.Spacing();
-						ImGui.Text( $"Ready Check Object Address: 0x{MemoryHandler.DEBUG_GetReadyCheckObjectAddress():X16}" );
-						ImGui.Text( $"Hud Agent Address: 0x{mHudManager._hudAgentPtr:X16}" );
+						ImGui.Text( $"Ready Check Object Address: 0x{MemoryHandler.DEBUG_GetReadyCheckObjectAddress():X}" );
+						ImGui.Text( $"Hud Agent Address: 0x{mHudManager._hudAgentPtr:X}" );
 						ImGui.Checkbox( "Show Raw Readycheck Data", ref mDebugRawWindowVisible );
 						ImGui.Checkbox( "Show Processed Readycheck Data", ref mDebugProcessedWindowVisible );
 						ImGui.Checkbox( "Debug Drawing on Party List", ref mDEBUG_DrawPlaceholderData );
@@ -297,8 +297,7 @@ namespace ReadyCheckHelper
 						ImGui.InputText( "##ObjectAddressSetInputBox", ref mDEBUG_ReadyCheckObjectAddressInputString, 16 );
 						if( ImGui.Button( "Set Ready Check Object Address" ) )
 						{
-							IntPtr ptr;
-							bool isValidPointer = IntPtr.TryParse( mDEBUG_ReadyCheckObjectAddressInputString, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out ptr );
+							bool isValidPointer = IntPtr.TryParse( mDEBUG_ReadyCheckObjectAddressInputString, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out IntPtr ptr );
 							if( isValidPointer ) MemoryHandler.DEBUG_SetReadyCheckObjectAddress( ptr );
 						}
 						ImGui.PopStyleColor();
@@ -376,14 +375,13 @@ namespace ReadyCheckHelper
 			{
 				ImGui.PushFont( UiBuilder.MonoFont );
 				ImGui.Text( "Early object bytes:" );
-				byte[] readyCheckObjectBytes = null;
-				if( MemoryHandler.DEBUG_GetRawReadyCheckObjectStuff( out readyCheckObjectBytes ) )
+				if( MemoryHandler.DEBUG_GetRawReadyCheckObjectStuff( out byte[] readyCheckObjectBytes ) )
 				{
 					string str = "";
 					for( int i = 0; i < readyCheckObjectBytes.Length; ++i )
 					{
 						str += readyCheckObjectBytes[i].ToString( "X2" );
-						if( (i + 1) % 8 == 0 )
+						if( ( i + 1 ) % 8 == 0 )
 						{
 							ImGui.Text( str + " " );
 							str = "";
@@ -401,8 +399,7 @@ namespace ReadyCheckHelper
 				ImGui.Spacing();
 
 				ImGui.Text( "Ready check array:" );
-				IntPtr[] rawData = null;
-				if( MemoryHandler.DEBUG_GetRawReadyCheckData( out rawData ) )
+				if( MemoryHandler.DEBUG_GetRawReadyCheckData( out IntPtr[] rawData ) )
 				{
 					for( int i = 0; i < rawData.Length; ++i )
 					{

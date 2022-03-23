@@ -54,22 +54,22 @@ namespace ReadyCheckHelper
 		private static void ReadyCheckInitiatedDetour( IntPtr ptr )
 		{
 			mReadyCheckInitiatedHook.Original( ptr );
-			PluginLog.LogDebug( $"Ready check initiated with object location: 0x{ptr.ToString( "X" )}" );
+			PluginLog.LogDebug( $"Ready check initiated with object location: 0x{ptr:X}" );
 			mpReadyCheckObject = ptr;
 			IsReadyCheckHappening = true;
-			if( ReadyCheckInitiatedEvent != null ) ReadyCheckInitiatedEvent( null, EventArgs.Empty );
+			ReadyCheckInitiatedEvent?.Invoke( null, EventArgs.Empty );
 		}
 
 		private static void ReadyCheckEndDetour( IntPtr ptr )
 		{
 			mReadyCheckEndHook.Original( ptr );
 			mpReadyCheckObject = ptr;   //	Do this for now because we don't get the ready check begin function called if we don't initiate ready check ourselves.
-			PluginLog.LogDebug( $"Ready check completed with object location: 0x{ptr.ToString( "X" )}" );
+			PluginLog.LogDebug( $"Ready check completed with object location: 0x{ptr:X}" );
 			IsReadyCheckHappening = false;
 			UpdateRawReadyCheckData();  //	Update our copy of the data one last time.
 			//***** TODO: Should we uncomment the next line now? The ready check object never seems to move, but we can't guarantee that...It is nice to keep it around for debugging. Maybe at the end of this function, save it off as a debug only address used only by the debug functions? *****
 			//mpReadyCheckObject = IntPtr.Zero;	//Ideally clean this up once the ready check is complete, because this isn't in the static section, so we don't have a guarantee that it's the same every time.  For now, we can't really get rid of it, because we don't have a ready check started hook unless you're the initiator.
-			if( ReadyCheckCompleteEvent != null ) ReadyCheckCompleteEvent( null, EventArgs.Empty );
+			ReadyCheckCompleteEvent?.Invoke( null, EventArgs.Empty );
 		}
 
 		private static bool CanGetRawReadyCheckData()
@@ -150,11 +150,11 @@ namespace ReadyCheckHelper
 		//	Delgates
 		private delegate void ReadyCheckFuncDelegate( IntPtr ptr );
 
-		private static ReadyCheckFuncDelegate mdReadyCheckInitiated = new ReadyCheckFuncDelegate( ReadyCheckInitiatedDetour );
+		private static readonly ReadyCheckFuncDelegate mdReadyCheckInitiated = new( ReadyCheckInitiatedDetour );
 		private static IntPtr mfpOnReadyCheckInitiated = IntPtr.Zero;
 		private static Hook<ReadyCheckFuncDelegate> mReadyCheckInitiatedHook;
 
-		private static ReadyCheckFuncDelegate mdReadyCheckEnd = new ReadyCheckFuncDelegate( ReadyCheckEndDetour );
+		private static readonly ReadyCheckFuncDelegate mdReadyCheckEnd = new( ReadyCheckEndDetour );
 		private static IntPtr mfpOnReadyCheckEnd = IntPtr.Zero;
 		private static Hook<ReadyCheckFuncDelegate> mReadyCheckEndHook;
 
