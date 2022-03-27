@@ -61,6 +61,12 @@
 		<None Update="Resources\Localization\loc_es.json">
 		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
+		<None Update="Resources\Localization\loc_fr.json">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Update="Resources\Localization\loc_ja.json">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
 		<None Update="Resources\Localization\ReadyCheckHelper_Localizable.json">
 		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
