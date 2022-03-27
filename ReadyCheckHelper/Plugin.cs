@@ -100,7 +100,7 @@ namespace ReadyCheckHelper
 
 		protected void OnLanguageChanged( string langCode )
 		{
-			var allowedLang = new List<string>{ "es", "fr" };
+			var allowedLang = new List<string>{ "es", "fr", "ja" };
 
 			PluginLog.Information( "Trying to set up Loc for culture {0}", langCode );
 
