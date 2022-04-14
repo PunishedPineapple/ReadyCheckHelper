@@ -166,10 +166,33 @@ namespace ReadyCheckHelper
 			return notReadyString;
 		}
 
-		//***** TODO *****
+		//***** TODO: Requires proofreading.  Adapted changes from Dalamud KR fork, but could be incomplete. *****
 		public static string ConstructNotReadyString_ko( List<string> notReadyList, int maxUnreadyToList )
 		{
-			return ConstructNotReadyString_en( notReadyList, maxUnreadyToList );
+			var trimmedList = new List<string>( notReadyList.Take( maxUnreadyToList ) );
+			int numExtra = Math.Max( 0, notReadyList.Count - trimmedList.Count );
+			if( numExtra > 0 )
+			{
+				trimmedList.Add( $"외 {numExtra} 명" );
+			}
+
+			string notReadyString = "준비 안됨: ";
+
+			for( int i = 0; i < trimmedList.Count; ++i )
+			{
+				//	If it's the last entry in the list, just put it.
+				if( i == trimmedList.Count - 1 )
+				{
+					notReadyString += trimmedList[i];
+				}
+				//	Otherwise, comma separate the list.
+				else
+				{
+					notReadyString += $"{trimmedList[i]}, ";
+				}
+			}
+
+			return notReadyString;
 		}
 
 		//***** TODO *****
