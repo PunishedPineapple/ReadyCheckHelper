@@ -92,12 +92,12 @@ namespace ReadyCheckHelper
 
     public unsafe class HudManager : IDisposable
     {
-        private const int GroupMemberOffset    = 0x0BE0;
-        private const int AllianceMemberOffset = 0x0D24;
-        private const int AllianceSizeOffset   = 0x0DC4;
+        private const int GroupMemberOffset    = 0x0CC8;
+        private const int AllianceMemberOffset = 0x0E14;
+        private const int AllianceSizeOffset   = 0x0EB4;
         private const int GroupMemberSize      = 0x20;
-        private const int GroupMemberOIDOffset = 0x10;
-        private const int GroupMemberCIDOffset = 0x8;
+        private const int GroupMemberOIDOffset = 0x18;
+        private const int GroupMemberCIDOffset = 0x10;
 
         private readonly Hook<UpdatePartyDelegate> _updatePartyHook;
         public IntPtr _hudAgentPtr { get; private set; } = IntPtr.Zero;
