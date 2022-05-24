@@ -6,10 +6,10 @@
   "InternalName": "ReadyCheckHelper",
   "AssemblyVersion": "1.0.2.1",
   "RepoUrl": "https://github.com/PunishedPineapple/ReadyCheckHelper",
-  "IconUrl": "https://github.com/PunishedPineapple/ReadyCheckHelper/raw/master/docs/Images/icon.png",
+  "IconUrl": "https://github.com/PunishedPineapple/ReadyCheckHelper/raw/main/docs/Images/icon.png",
   "ImageUrls": [
-    "https://github.com/PunishedPineapple/ReadyCheckHelper/raw/master/docs/Images/image1.png",
-    "https://github.com/PunishedPineapple/ReadyCheckHelper/raw/master/docs/Images/image2.png"
+    "https://github.com/PunishedPineapple/ReadyCheckHelper/raw/main/docs/Images/image1.png",
+    "https://github.com/PunishedPineapple/ReadyCheckHelper/raw/main/docs/Images/image2.png"
   ],
   "ApplicableVersion": "any",
   "Tags": [ "Ready Check", "Ready", "Check" ],

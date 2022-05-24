@@ -46,7 +46,6 @@ namespace ReadyCheckHelper
 			mDataManager		= dataManager;
 
 			//	Configuration
-			mPluginInterface = pluginInterface;
 			mConfiguration = mPluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 			mConfiguration.Initialize( mPluginInterface );
 			MemoryHandler.Init( mSigScanner );
@@ -87,12 +86,12 @@ namespace ReadyCheckHelper
 			mClientState.TerritoryChanged -= OnTerritoryChanged;
 			mCondition.ConditionChange -= OnConditionChanged;
 			MemoryHandler.Uninit();
-			mUI.Dispose();
 			mPluginInterface.UiBuilder.Draw -= DrawUI;
 			mPluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
 			mPluginInterface.LanguageChanged -= OnLanguageChanged;
 			mPluginInterface.RemoveChatLinkHandler();
 			mCommandManager.RemoveHandler( mTextCommandName );
+			mUI?.Dispose();
 			mInstancedTerritories.Clear();
 			mTimedOverlayCancellationSource?.Dispose();
 			mTimedOverlayCancellationSource = null;
@@ -543,7 +542,7 @@ namespace ReadyCheckHelper
 			foreach( var zone in contentFinderSheet ) mInstancedTerritories.Add( zone.TerritoryType.Row );
 		}
 
-		public string Name => "ReadyCheckHelper";
+		public string Name => "Ready Check Helper";
 		protected const string mTextCommandName = "/pready";
 		private readonly Dalamud.Game.Text.SeStringHandling.Payloads.DalamudLinkPayload mOpenReadyCheckWindowLink;
 
