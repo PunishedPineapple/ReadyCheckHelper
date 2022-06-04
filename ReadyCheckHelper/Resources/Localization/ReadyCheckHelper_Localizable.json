@@ -35,6 +35,14 @@
     "message": "Maximum number of names to show in chat:",
     "description": "PluginUI.DrawSettingsWindow"
   },
+  "Config Option: Chat Message Channel": {
+    "message": "Chat Log Channel:",
+    "description": "PluginUI.DrawSettingsWindow"
+  },
+  "Help: Chat Message Channel": {
+    "message": "Sets the channel in which this chat message is shown.  Leave this set to the default value ({0}) unless it causes problems with your chat configuration.  This only affects the unready players message; all other messages from this plugin respect your choice of chat channel in Dalamud settings.",
+    "description": "PluginUI.DrawSettingsWindow"
+  },
   "Config Option: Draw on Party Alliance Lists": {
     "message": "Draw ready check on party/alliance lists.",
     "description": "PluginUI.DrawSettingsWindow"
