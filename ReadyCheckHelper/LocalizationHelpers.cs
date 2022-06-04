@@ -218,7 +218,7 @@ namespace ReadyCheckHelper
 			mLogFilterSheet = null;
 		}
 
-		internal static string GetLocalizedChatChannelName( XivChatType channel )
+		internal static string GetTranslatedChatChannelName( XivChatType channel )
 		{
 			var exdRow = mLogFilterSheet?.FirstOrDefault( x => { return x.LogKind == ((byte)channel & 0x7F ); } );
 			return exdRow != null ? exdRow.Name.ToString() : Enum.GetName( typeof( XivChatType ), channel );
