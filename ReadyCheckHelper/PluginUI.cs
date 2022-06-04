@@ -93,6 +93,17 @@ namespace ReadyCheckHelper
 					ImGui.Indent();
 					ImGui.Text( Loc.Localize( "Config Option: Max Names in Chat", "Maximum number of names to show in chat:" ) );
 					ImGui.SliderInt( "##MaxUnreadyNamesToShowInChat", ref mConfiguration.mMaxUnreadyToListInChat, 1, 48 );
+					ImGui.Spacing();
+					ImGui.Text( Loc.Localize( "Config Option: Chat Message Channel", "Chat Log Channel:" ) );
+					ImGuiHelpMarker( String.Format( Loc.Localize( "Help: Chat Message Channel", "Sets the channel in which this chat message is shown.  Leave this set to the default value ({0}) unless it causes problems with your chat configuration.  This only affects the unready players message; all other messages from this plugin respect your choice of chat channel in Dalamud settings." ), LocalizationHelpers.GetLocalizedChatChannelName( Dalamud.Game.Text.XivChatType.SystemMessage ) ) );
+					if( ImGui.BeginCombo( "###NotReadyMessageChatChannelDropdown", LocalizationHelpers.GetLocalizedChatChannelName( mConfiguration.ChatChannelToUseForNotReadyMessage ) ) )
+					{
+						foreach( Dalamud.Game.Text.XivChatType entry in Enum.GetValues( typeof( Dalamud.Game.Text.XivChatType ) ) )
+						{
+							if( ImGui.Selectable( LocalizationHelpers.GetLocalizedChatChannelName( entry ) ) ) mConfiguration.ChatChannelToUseForNotReadyMessage = entry;
+						}
+						ImGui.EndCombo();
+					}
 					ImGui.Unindent();
 
 					ImGui.Spacing();

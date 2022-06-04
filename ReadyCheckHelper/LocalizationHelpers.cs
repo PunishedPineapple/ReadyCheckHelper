@@ -4,12 +4,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Dalamud;
+using Dalamud.Data;
+using Dalamud.Game.Text;
+
+using Lumina.Excel;
+using Lumina.Excel.GeneratedSheets;
+
 namespace ReadyCheckHelper
 {
-	static class LocalizationHelpers
+	internal static class LocalizationHelpers
 	{
 		//***** TODO: Requires severe proofreading.  Inferred from Google Translate, could be totally butchered. *****
-		public static string ConstructNotReadyString_ja( List<string> notReadyList, int maxUnreadyToList )
+		internal static string ConstructNotReadyString_ja( List<string> notReadyList, int maxUnreadyToList )
 		{
 			var trimmedList = new List<string>( notReadyList.Take( maxUnreadyToList ) );
 			int numExtra = Math.Max( 0, notReadyList.Count - trimmedList.Count );
@@ -51,7 +58,7 @@ namespace ReadyCheckHelper
 			return notReadyString;
 		}
 
-		public static string ConstructNotReadyString_en( List<string> notReadyList, int maxUnreadyToList )
+		internal static string ConstructNotReadyString_en( List<string> notReadyList, int maxUnreadyToList )
 		{
 			var trimmedList = new List<string>( notReadyList.Take( maxUnreadyToList ) );
 			int numExtra = Math.Max( 0, notReadyList.Count - trimmedList.Count );
@@ -90,7 +97,7 @@ namespace ReadyCheckHelper
 		}
 
 		//***** TODO: Requires proofreading. *****
-		public static string ConstructNotReadyString_de( List<string> notReadyList, int maxUnreadyToList )
+		internal static string ConstructNotReadyString_de( List<string> notReadyList, int maxUnreadyToList )
 		{
 			var trimmedList = new List<string>( notReadyList.Take( maxUnreadyToList ) );
 			int numExtra = Math.Max( 0, notReadyList.Count - trimmedList.Count );
@@ -128,7 +135,7 @@ namespace ReadyCheckHelper
 			return notReadyString;
 		}
 
-		public static string ConstructNotReadyString_fr( List<string> notReadyList, int maxUnreadyToList )
+		internal static string ConstructNotReadyString_fr( List<string> notReadyList, int maxUnreadyToList )
 		{
 			var trimmedList = new List<string>( notReadyList.Take( maxUnreadyToList ) );
 			int numExtra = Math.Max( 0, notReadyList.Count - trimmedList.Count );
@@ -167,7 +174,7 @@ namespace ReadyCheckHelper
 		}
 
 		//***** TODO: Requires proofreading.  Adapted changes from Dalamud KR fork, but could be incomplete. *****
-		public static string ConstructNotReadyString_ko( List<string> notReadyList, int maxUnreadyToList )
+		internal static string ConstructNotReadyString_ko( List<string> notReadyList, int maxUnreadyToList )
 		{
 			var trimmedList = new List<string>( notReadyList.Take( maxUnreadyToList ) );
 			int numExtra = Math.Max( 0, notReadyList.Count - trimmedList.Count );
@@ -196,12 +203,30 @@ namespace ReadyCheckHelper
 		}
 
 		//***** TODO *****
-		public static string ConstructNotReadyString_zh( List<string> notReadyList, int maxUnreadyToList )
+		internal static string ConstructNotReadyString_zh( List<string> notReadyList, int maxUnreadyToList )
 		{
 			return ConstructNotReadyString_en( notReadyList, maxUnreadyToList );
 		}
 
-		public static readonly string[] TestNames = new string[]
+		internal static void Init( DataManager dataManager )
+		{
+			mLogFilterSheet = dataManager.GetExcelSheet<LogFilter>();
+		}
+
+		internal static void Uninit()
+		{
+			mLogFilterSheet = null;
+		}
+
+		internal static string GetLocalizedChatChannelName( XivChatType channel )
+		{
+			var exdRow = mLogFilterSheet?.FirstOrDefault( x => { return x.LogKind == ((byte)channel & 0x7F ); } );
+			return exdRow != null ? exdRow.Name.ToString() : Enum.GetName( typeof( XivChatType ), channel );
+		}
+
+		private static ExcelSheet<LogFilter> mLogFilterSheet;
+
+		internal static readonly string[] TestNames = new string[]
 		{
 			"Cloud Strife",
 			"Terra Branford",

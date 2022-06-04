@@ -56,6 +56,7 @@ namespace ReadyCheckHelper
 			{
 				ShowBestAvailableReadyCheckWindow();
 			} );
+			LocalizationHelpers.Init( dataManager );
 
 			//	UI Initialization
 			mUI = new PluginUI( this, mPluginInterface, mConfiguration, mDataManager, mGameGui, mSigScanner );
@@ -93,6 +94,7 @@ namespace ReadyCheckHelper
 			mCommandManager.RemoveHandler( mTextCommandName );
 			mUI?.Dispose();
 			mInstancedTerritories.Clear();
+			LocalizationHelpers.Uninit();
 			mTimedOverlayCancellationSource?.Dispose();
 			mTimedOverlayCancellationSource = null;
 		}
@@ -467,7 +469,7 @@ namespace ReadyCheckHelper
 					await Task.Delay( 500 );    //***** TODO: Make this value configurable, or fix the underlying issue. *****
 					var chatEntry = new Dalamud.Game.Text.XivChatEntry
 					{
-						Type = Dalamud.Game.Text.XivChatType.SystemMessage,
+						Type = mConfiguration.ChatChannelToUseForNotReadyMessage,
 						Message = new Dalamud.Game.Text.SeStringHandling.SeString( new List<Dalamud.Game.Text.SeStringHandling.Payload>
 						{
 							//Dalamud.Game.Text.SeStringHandling.SeString.TextArrowPayloads,

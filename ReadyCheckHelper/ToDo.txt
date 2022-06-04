@@ -2,6 +2,7 @@
 -Check food durations for synced Extremes, Savages, and Ultimates when ready checking.
 -Add an alternate drawing mode that uses in-game UI elements for drawing on party list.
 
+
 Bugs:
 -In crossworld party, CID in the ready check data becomes zero if a person DCs, making the existing logic not work in that case.  Maybe cache the IDs at the start of a ready check?
 	-This was only observed once, and in passing, so may have been misunderstood.  Keep an eye out for it.
@@ -17,6 +18,7 @@ Bugs:
 Priority:
 	Drawing on party/alliance lists:
 		-Dirty the data when the party changes.
+			-Maybe not actually; just make sure that we're drawing on the correct names in this case.
 		-Add option for top or bottom placement of icon positioning.  (Or user-configurable offsets/scales)
 		-Find better unknown icon texture.
 
@@ -25,4 +27,3 @@ Priority:
 
 	Misc:
 		-Figure out if/how we can show the game's ready check window from the text link.
-		-Localization

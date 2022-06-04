@@ -78,6 +78,14 @@ namespace ReadyCheckHelper
 			set { mTimeUntilClearReadyCheckOverlay_Sec = value; }
 		}
 
+		//	Backing field as an int to work with ImGui.
+		public int mChatChannelToUseForNotReadyMessage = (int)Dalamud.Game.Text.XivChatType.SystemMessage;
+		public Dalamud.Game.Text.XivChatType ChatChannelToUseForNotReadyMessage
+		{
+			get { return (Dalamud.Game.Text.XivChatType)mChatChannelToUseForNotReadyMessage; }
+			set { mChatChannelToUseForNotReadyMessage = (int)value; }
+		}
+
 		//  Plugin framework and related convenience functions below.
 		public void Initialize( DalamudPluginInterface pluginInterface )
 		{
