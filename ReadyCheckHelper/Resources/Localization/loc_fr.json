@@ -35,6 +35,14 @@
     "message": "Nombre maximum de noms à afficher dans le chat :",
     "description": "PluginUI.DrawSettingsWindow"
   },
+  "Config Option: Chat Message Channel": {
+    "message": "Canal de Discussion :",
+    "description": "PluginUI.DrawSettingsWindow"
+  },
+  "Help: Chat Message Channel": {
+    "message": "Définit le canal de discussion dans lequel le message sera affiché dans le chat. Laissez cette option sur sa valeur par défaut ({0}) à moins que cela ne cause des soucis avec votre configuration de chat. Cela n'affecte que les messages à propos des joueurs qui ne sont pas prêts ; tous les autres messages de ce plugin respectent le canal de discussion par défaut que vous avez sélectionné dans les paramètres de Dalamud.",
+    "description": "PluginUI.DrawSettingsWindow"
+  },
   "Config Option: Draw on Party Alliance Lists": {
     "message": "Afficher un symbole de préparation sur la liste d'équipe/d'alliance.",
     "description": "PluginUI.DrawSettingsWindow"
