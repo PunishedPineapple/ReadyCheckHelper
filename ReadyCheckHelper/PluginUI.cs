@@ -249,123 +249,129 @@ namespace ReadyCheckHelper
 			if( ImGui.Begin( Loc.Localize( "Window Title: Ready Check and Alliance Debug Data", "Ready Check and Alliance Debug Data" ) + "###Ready Check and Alliance Debug Data", ref mDebugWindowVisible ) )
 			{
 				ImGui.PushFont( UiBuilder.MonoFont );
-				unsafe
+				try
 				{
-					if( (IntPtr)FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance() == IntPtr.Zero )
+					unsafe
 					{
-						ImGui.Text( "The GroupManager instance pointer is null!" );
-					}
-					else if( (IntPtr)FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance() == IntPtr.Zero )
-					{
-						ImGui.Text( "The InfoProxyCrossRealm instance pointer is null!" );
-					}
-					else
-					{
-						var readyCheckdata = MemoryHandler.GetReadyCheckInfo();
+						if( (IntPtr)FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance() == IntPtr.Zero )
+						{
+							ImGui.Text( "The GroupManager instance pointer is null!" );
+						}
+						else if( (IntPtr)FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance() == IntPtr.Zero )
+						{
+							ImGui.Text( "The InfoProxyCrossRealm instance pointer is null!" );
+						}
+						else
+						{
+							var readyCheckdata = MemoryHandler.GetReadyCheckInfo();
 
-						ImGui.Columns( 4 );
-						ImGui.Text( "General Info:" );
+							ImGui.Columns( 4 );
+							ImGui.Text( "General Info:" );
 
-						ImGui.Text( $"Number of Party Members: {FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->MemberCount}" );
-						ImGui.Text( $"Is Alliance: {FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->IsAlliance}" );
-						ImGui.Text( $"Is Cross-World: {FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance()->IsCrossRealm}" );
-						byte crossWorldGroupCount = FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance()->GroupCount;
-						ImGui.Text( $"Number of Cross-World Groups: {crossWorldGroupCount}" );
-						for( int i = 0; i < crossWorldGroupCount; ++i )
-						{
-							ImGui.Text( $"Number of Party Members (Group {i}): {FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.GetGroupMemberCount( i )}" );
-						}
-						ImGui.Text( $"Ready check is active: {mPlugin.ReadyCheckActive}" );
-						ImGui.Spacing();
-						ImGui.Spacing();
-						ImGui.Spacing();
-						ImGui.Text( $"Ready Check Object Address: 0x{MemoryHandler.DEBUG_GetReadyCheckObjectAddress():X}" );
-						ImGui.Text( $"Hud Agent Address: 0x{mHudManager._hudAgentPtr:X}" );
-						ImGui.Checkbox( "Show Raw Readycheck Data", ref mDebugRawWindowVisible );
-						ImGui.Checkbox( "Show Processed Readycheck Data", ref mDebugProcessedWindowVisible );
-						ImGui.Checkbox( "Debug Drawing on Party List", ref mDEBUG_DrawPlaceholderData );
-						ImGui.Checkbox( "Allow Cross-world Alliance List Drawing", ref mDEBUG_AllowCrossWorldAllianceDrawing );
-						{
-							if( ImGui.Button( "Test Chat Message" ) )
+							ImGui.Text( $"Number of Party Members: {FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->MemberCount}" );
+							ImGui.Text( $"Is Alliance: {FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->IsAlliance}" );
+							ImGui.Text( $"Is Cross-World: {FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance()->IsCrossRealm}" );
+							byte crossWorldGroupCount = FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance()->GroupCount;
+							ImGui.Text( $"Number of Cross-World Groups: {crossWorldGroupCount}" );
+							for( int i = 0; i < crossWorldGroupCount; ++i )
 							{
-								mPlugin.ListUnreadyPlayersInChat( new List<string>( LocalizationHelpers.TestNames.Take( mDEBUG_NumNamesToTestChatMessage ) ) );
+								ImGui.Text( $"Number of Party Members (Group {i}): {FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.GetGroupMemberCount( i )}" );
 							}
-							ImGui.SliderInt( "Number of Test Names", ref mDEBUG_NumNamesToTestChatMessage, 1, LocalizationHelpers.TestNames.Length );
-						}
-						if( ImGui.Button( "Export Localizable Strings" ) )
-						{
-							string pwd = Directory.GetCurrentDirectory();
-							Directory.SetCurrentDirectory( mPluginInterface.AssemblyLocation.DirectoryName );
-							Loc.ExportLocalizable();
-							Directory.SetCurrentDirectory( pwd );
-						}
-						ImGui.Spacing();
-						ImGui.Spacing();
-						ImGui.Spacing();
-						ImGui.PushStyleColor( ImGuiCol.Text, 0xee4444ff );
-						ImGui.Text( "Ready Check Object Address:" );
-						ImGuiHelpMarker( Loc.Localize( "Help: Debug Set Object Address Warning", "DO NOT TOUCH THIS UNLESS YOU KNOW EXACTLY WHAT YOU'RE DOING AND WHY; THE ABSOLUTE BEST CASE IS A PLUGIN CRASH." ) );
-						ImGui.InputText( "##ObjectAddressSetInputBox", ref mDEBUG_ReadyCheckObjectAddressInputString, 16 );
-						if( ImGui.Button( "Set Ready Check Object Address" ) )
-						{
-							bool isValidPointer = IntPtr.TryParse( mDEBUG_ReadyCheckObjectAddressInputString, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out IntPtr ptr );
-							if( isValidPointer ) MemoryHandler.DEBUG_SetReadyCheckObjectAddress( ptr );
-						}
-						ImGui.PopStyleColor();
-						ImGui.NextColumn();
-						ImGui.Text( "Ready Check Data:" );
-						for( int i = 0; i < readyCheckdata.Length; ++i )
-						{
-							ImGui.Text( $"ID: {readyCheckdata[i].ID:X16}, State: {readyCheckdata[i].ReadyFlag}" );
-						}
-						ImGui.NextColumn();
-						ImGui.Text( "Party Data:" );
-						for( int i = 0; i < 8; ++i )
-						{
-							var pGroupMember = FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->GetPartyMemberByIndex( i );
-							if( (IntPtr)pGroupMember != IntPtr.Zero )
+							ImGui.Text( $"Ready check is active: {mPlugin.ReadyCheckActive}" );
+							ImGui.Spacing();
+							ImGui.Spacing();
+							ImGui.Spacing();
+							ImGui.Text( $"Ready Check Object Address: 0x{MemoryHandler.DEBUG_GetReadyCheckObjectAddress():X}" );
+							ImGui.Text( $"Hud Agent Address: 0x{mHudManager._hudAgentPtr:X}" );
+							ImGui.Checkbox( "Show Raw Readycheck Data", ref mDebugRawWindowVisible );
+							ImGui.Checkbox( "Show Processed Readycheck Data", ref mDebugProcessedWindowVisible );
+							ImGui.Checkbox( "Debug Drawing on Party List", ref mDEBUG_DrawPlaceholderData );
+							ImGui.Checkbox( "Allow Cross-world Alliance List Drawing", ref mDEBUG_AllowCrossWorldAllianceDrawing );
 							{
-								string name = MemoryHelper.ReadSeStringNullTerminated( (IntPtr)pGroupMember->Name ).ToString();
-								string classJobAbbr = JobDict.TryGetValue( pGroupMember->ClassJob, out classJobAbbr ) ? classJobAbbr : "ERR";
-								ImGui.Text( $"Job: {classJobAbbr}, OID: {pGroupMember->ObjectID:X8}, CID: {pGroupMember->ContentID:X16}, Name: {name}" );
+								if( ImGui.Button( "Test Chat Message" ) )
+								{
+									mPlugin.ListUnreadyPlayersInChat( new List<string>( LocalizationHelpers.TestNames.Take( mDEBUG_NumNamesToTestChatMessage ) ) );
+								}
+								ImGui.SliderInt( "Number of Test Names", ref mDEBUG_NumNamesToTestChatMessage, 1, LocalizationHelpers.TestNames.Length );
 							}
-							else
+							if( ImGui.Button( "Export Localizable Strings" ) )
 							{
-								ImGui.Text( "Party member returned as null pointer." );
+								string pwd = Directory.GetCurrentDirectory();
+								Directory.SetCurrentDirectory( mPluginInterface.AssemblyLocation.DirectoryName );
+								Loc.ExportLocalizable();
+								Directory.SetCurrentDirectory( pwd );
 							}
-						}
-						for( int i = 0; i < 16; ++i )
-						{
-							var pGroupMember = FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->GetAllianceMemberByIndex( i );
-							if( (IntPtr)pGroupMember != IntPtr.Zero )
+							ImGui.Spacing();
+							ImGui.Spacing();
+							ImGui.Spacing();
+							ImGui.PushStyleColor( ImGuiCol.Text, 0xee4444ff );
+							ImGui.Text( "Ready Check Object Address:" );
+							ImGuiHelpMarker( Loc.Localize( "Help: Debug Set Object Address Warning", "DO NOT TOUCH THIS UNLESS YOU KNOW EXACTLY WHAT YOU'RE DOING AND WHY; THE ABSOLUTE BEST CASE IS A PLUGIN CRASH." ) );
+							ImGui.InputText( "##ObjectAddressSetInputBox", ref mDEBUG_ReadyCheckObjectAddressInputString, 16 );
+							if( ImGui.Button( "Set Ready Check Object Address" ) )
 							{
-								string name = MemoryHelper.ReadSeStringNullTerminated( (IntPtr)pGroupMember->Name ).ToString();
-								string classJobAbbr = JobDict.TryGetValue( pGroupMember->ClassJob, out classJobAbbr ) ? classJobAbbr : "ERR";
-								ImGui.Text( $"Job: {classJobAbbr}, OID: {pGroupMember->ObjectID:X8}, CID: {pGroupMember->ContentID:X16}, Name: {name}" );
+								bool isValidPointer = IntPtr.TryParse( mDEBUG_ReadyCheckObjectAddressInputString, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out IntPtr ptr );
+								if( isValidPointer ) MemoryHandler.DEBUG_SetReadyCheckObjectAddress( ptr );
 							}
-							else
+							ImGui.PopStyleColor();
+							ImGui.NextColumn();
+							ImGui.Text( "Ready Check Data:" );
+							for( int i = 0; i < readyCheckdata.Length; ++i )
 							{
-								ImGui.Text( "Alliance member returned as null pointer." );
+								ImGui.Text( $"ID: {readyCheckdata[i].ID:X16}, State: {readyCheckdata[i].ReadyFlag}" );
 							}
-						}
-						ImGui.NextColumn();
-						ImGui.Text( "Cross-World Party Data:" );
-						for( int i = 0; i < crossWorldGroupCount; ++i )
-						{
-							for( int j = 0; j < FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.GetGroupMemberCount( i ); ++j )
+							ImGui.NextColumn();
+							ImGui.Text( "Party Data:" );
+							for( int i = 0; i < 8; ++i )
 							{
-								var pGroupMember = FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.GetGroupMember( (uint)j, i );
+								var pGroupMember = FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->GetPartyMemberByIndex( i );
 								if( (IntPtr)pGroupMember != IntPtr.Zero )
 								{
 									string name = MemoryHelper.ReadSeStringNullTerminated( (IntPtr)pGroupMember->Name ).ToString();
-									ImGui.Text( $"Group: {pGroupMember->GroupIndex}, OID: {pGroupMember->ObjectId:X8}, CID: {pGroupMember->ContentId:X16}, Name: {name}" );
+									string classJobAbbr = JobDict.TryGetValue( pGroupMember->ClassJob, out classJobAbbr ) ? classJobAbbr : "ERR";
+									ImGui.Text( $"Job: {classJobAbbr}, OID: {pGroupMember->ObjectID:X8}, CID: {pGroupMember->ContentID:X16}, Name: {name}" );
+								}
+								else
+								{
+									ImGui.Text( "Party member returned as null pointer." );
 								}
 							}
+							for( int i = 0; i < 16; ++i )
+							{
+								var pGroupMember = FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->GetAllianceMemberByIndex( i );
+								if( (IntPtr)pGroupMember != IntPtr.Zero )
+								{
+									string name = MemoryHelper.ReadSeStringNullTerminated( (IntPtr)pGroupMember->Name ).ToString();
+									string classJobAbbr = JobDict.TryGetValue( pGroupMember->ClassJob, out classJobAbbr ) ? classJobAbbr : "ERR";
+									ImGui.Text( $"Job: {classJobAbbr}, OID: {pGroupMember->ObjectID:X8}, CID: {pGroupMember->ContentID:X16}, Name: {name}" );
+								}
+								else
+								{
+									ImGui.Text( "Alliance member returned as null pointer." );
+								}
+							}
+							ImGui.NextColumn();
+							ImGui.Text( "Cross-World Party Data:" );
+							for( int i = 0; i < crossWorldGroupCount; ++i )
+							{
+								for( int j = 0; j < FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.GetGroupMemberCount( i ); ++j )
+								{
+									var pGroupMember = FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.GetGroupMember( (uint)j, i );
+									if( (IntPtr)pGroupMember != IntPtr.Zero )
+									{
+										string name = MemoryHelper.ReadSeStringNullTerminated( (IntPtr)pGroupMember->Name ).ToString();
+										ImGui.Text( $"Group: {pGroupMember->GroupIndex}, OID: {pGroupMember->ObjectId:X8}, CID: {pGroupMember->ContentId:X16}, Name: {name}" );
+									}
+								}
+							}
+							ImGui.Columns();
 						}
-						ImGui.Columns();
 					}
 				}
-				ImGui.PopFont();
+				finally
+				{
+					ImGui.PopFont();
+				}
 			}
 
 			//	We're done.
@@ -385,44 +391,50 @@ namespace ReadyCheckHelper
 			if( ImGui.Begin( Loc.Localize( "Window Title: Raw Ready Check Data", "Debug: Raw Ready Check Data" ) + "###Raw Ready Check Data", ref mDebugRawWindowVisible ) )
 			{
 				ImGui.PushFont( UiBuilder.MonoFont );
-				ImGui.Text( "Early object bytes:" );
-				if( MemoryHandler.DEBUG_GetRawReadyCheckObjectStuff( out byte[] readyCheckObjectBytes ) )
+				try
 				{
-					string str = "";
-					for( int i = 0; i < readyCheckObjectBytes.Length; ++i )
+					ImGui.Text( "Early object bytes:" );
+					if( MemoryHandler.DEBUG_GetRawReadyCheckObjectStuff( out byte[] readyCheckObjectBytes ) )
 					{
-						str += readyCheckObjectBytes[i].ToString( "X2" );
-						if( ( i + 1 ) % 8 == 0 )
+						string str = "";
+						for( int i = 0; i < readyCheckObjectBytes.Length; ++i )
 						{
-							ImGui.Text( str + " " );
-							str = "";
-							if( ( i + 1 ) % 64 > 0 ) ImGui.SameLine();
+							str += readyCheckObjectBytes[i].ToString( "X2" );
+							if( ( i + 1 ) % 8 == 0 )
+							{
+								ImGui.Text( str + " " );
+								str = "";
+								if( ( i + 1 ) % 64 > 0 ) ImGui.SameLine();
+							}
 						}
 					}
-				}
-				else
-				{
-					ImGui.Text( "Raw ready check object is unavailable." );
-				}
-
-				ImGui.Spacing();
-				ImGui.Spacing();
-				ImGui.Spacing();
-
-				ImGui.Text( "Ready check array:" );
-				if( MemoryHandler.DEBUG_GetRawReadyCheckData( out IntPtr[] rawData ) )
-				{
-					for( int i = 0; i < rawData.Length; ++i )
+					else
 					{
-						if( i % 8 > 0 ) ImGui.SameLine();
-						ImGui.Text( $"{rawData[i]:X16} " );
+						ImGui.Text( "Raw ready check object is unavailable." );
+					}
+
+					ImGui.Spacing();
+					ImGui.Spacing();
+					ImGui.Spacing();
+
+					ImGui.Text( "Ready check array:" );
+					if( MemoryHandler.DEBUG_GetRawReadyCheckData( out IntPtr[] rawData ) )
+					{
+						for( int i = 0; i < rawData.Length; ++i )
+						{
+							if( i % 8 > 0 ) ImGui.SameLine();
+							ImGui.Text( $"{rawData[i]:X16} " );
+						}
+					}
+					else
+					{
+						ImGui.Text( "Raw ready check data is unavailable, most likely due to not yet having located the ready check object." );
 					}
 				}
-				else
+				finally
 				{
-					ImGui.Text( "Raw ready check data is unavailable, most likely due to not yet having located the ready check object." );
+					ImGui.PopFont();
 				}
-				ImGui.PopFont();
 			}
 
 			//	We're done.
@@ -442,20 +454,26 @@ namespace ReadyCheckHelper
 			if( ImGui.Begin( Loc.Localize( "Window Title: Processed Ready Check Data", "Debug: Processed Ready Check Data" ) + "###Processed Ready Check Data", ref mDebugProcessedWindowVisible ) )
 			{
 				ImGui.PushFont( UiBuilder.MonoFont );
-				var list = mPlugin.GetProcessedReadyCheckData();
-				if( list != null )
+				try
 				{
-					foreach( var player in list )
+					var list = mPlugin.GetProcessedReadyCheckData();
+					if( list != null )
 					{
-						ImGui.Text( $"OID: {player.ObjectID:X8}, CID: {player.ContentID:X16}, Group: {player.GroupIndex}, Index: {player.MemberIndex}, State: {(byte)player.ReadyState}, Name: {player.Name}" );
+						foreach( var player in list )
+						{
+							ImGui.Text( $"OID: {player.ObjectID:X8}, CID: {player.ContentID:X16}, Group: {player.GroupIndex}, Index: {player.MemberIndex}, State: {(byte)player.ReadyState}, Name: {player.Name}" );
+						}
+					}
+
+					if( ImGui.Button( Loc.Localize( "Button: Close", "Close" ) + "###Close" ) )
+					{
+						DebugProcessedWindowVisible = false;
 					}
 				}
-
-				if( ImGui.Button( Loc.Localize( "Button: Close", "Close" ) + "###Close" ) )
+				finally
 				{
-					DebugProcessedWindowVisible = false;
+					ImGui.PopFont();
 				}
-				ImGui.PopFont();
 			}
 
 			//	We're done.
