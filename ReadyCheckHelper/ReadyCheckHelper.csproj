@@ -2,7 +2,7 @@
 	<PropertyGroup>
 		<TargetFramework>net5.0-windows</TargetFramework>
 		<Platforms>AnyCPU</Platforms>
-		<Version>1.0.3.0</Version>
+		<Version>1.0.3.1</Version>
 		<Authors>PunishedPineapple</Authors>
 		<Product />
 		<Copyright>Copyright © PunishedPineapple 2021-2022</Copyright>
@@ -22,6 +22,10 @@
 		<DebugSymbols>true</DebugSymbols>
 		<DebugType>full</DebugType>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="DalamudPackager" Version="2.1.7" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<Reference Include="Dalamud">
@@ -59,20 +63,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Update="ReadyCheckHelper.json">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
-		<None Update="Resources\Localization\loc_es.json">
-		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
-		<None Update="Resources\Localization\loc_fr.json">
-		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
-		<None Update="Resources\Localization\loc_ja.json">
-		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
-		<None Update="Resources\Localization\ReadyCheckHelper_Localizable.json">
-		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
+		<Content Include="Resources\**" DestinationFolder="Resources\$(RecursiveDir)" CopyToOutputDirectory="Always" />
 	</ItemGroup>
 </Project>
