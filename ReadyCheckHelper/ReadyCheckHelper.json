@@ -9,5 +9,6 @@
     "https://github.com/PunishedPineapple/ReadyCheckHelper/raw/main/docs/Images/image1.png",
     "https://github.com/PunishedPineapple/ReadyCheckHelper/raw/main/docs/Images/image2.png"
   ],
-  "Tags": [ "Ready Check", "Ready", "Check" ]
+  "Tags": [ "Ready Check", "Ready", "Check" ],
+  "DalamudApiLevel": 7
 }
