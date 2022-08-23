@@ -127,6 +127,14 @@ namespace ReadyCheckHelper
 					ImGui.Checkbox( Loc.Localize( "Config Option: Clear Party Alliance List after X Seconds:", "After a certain number of seconds:" ) + "###After X seconds.", ref mConfiguration.mClearReadyCheckOverlayAfterTime );
 					ImGuiHelpMarker( Loc.Localize( "Help: Clear Party Alliance List after X Seconds", "Changes to this setting will not take effect until the next ready check concludes." ) );
 					ImGui.DragInt( "###TimeUntilClearOverlaySlider", ref mConfiguration.mTimeUntilClearReadyCheckOverlay_Sec, 1.0f, 30, 900, "%d", ImGuiSliderFlags.AlwaysClamp );
+					ImGui.Spacing();
+					ImGui.Text( Loc.Localize( "Config Section: Icon Size/Offset", "Party and Alliance List Icon Size/Offset:" ) );
+					ImGui.DragFloat2( Loc.Localize( "Config Option: Party List Icon Offset", "Party List Icon Offset" ) + "###PartyListIconOffset", ref mConfiguration.mPartyListIconOffset, 1f, -100f, 100f );
+					ImGui.DragFloat( Loc.Localize( "Config Option: Party List Icon Scale", "Party List Icon Scale" ) + "###PartyListIconScale", ref mConfiguration.mPartyListIconScale, 0.1f, 0.3f, 5.0f, "%d", ImGuiSliderFlags.AlwaysClamp );
+					ImGui.DragFloat2( Loc.Localize( "Config Option: Alliance List Icon Offset", "Alliance List Icon Offset" ) + "###AllianceListIconOffset", ref mConfiguration.mAllianceListIconOffset, 1f, -100f, 100f );
+					ImGui.DragFloat( Loc.Localize( "Config Option: Alliance List Icon Scale", "Alliance List Icon Scale" ) + "###AllianceListIconScale", ref mConfiguration.mAllianceListIconScale, 0.1f, 0.3f, 5.0f, "%d", ImGuiSliderFlags.AlwaysClamp );
+					//ImGui.DragFloat2( Loc.Localize( "Config Option: Cross-World Alliance List Icon Offset", "Cross-World Alliance List Icon Offset" ) + "###CrossWorldAllianceListIconOffset", ref mConfiguration.mCrossWorldAllianceListIconOffset, 1f, -100f, 100f );
+					//ImGui.DragFloat( Loc.Localize( "Config Option: Cross-World Alliance List Icon Scale", "Cross-World Alliance List Icon Scale" ) + "###CrossWorldAllianceListIconScale", ref mConfiguration.mCrossWorldAllianceListIconScale, 0.1f, 0.3f, 5.0f, "%d", ImGuiSliderFlags.AlwaysClamp );
 					ImGui.Unindent();
 				}
 
@@ -649,8 +657,8 @@ namespace ReadyCheckHelper
 				if( (IntPtr)pIconNode != IntPtr.Zero )
 				{
 					//	Note: sub-nodes don't scale, so we have to account for the addon's scale.
-					Vector2 iconOffset = new Vector2( -7, -5 ) * pPartyList->Scale;
-					Vector2 iconSize = new Vector2( pIconNode->Width / 3, pIconNode->Height / 3 ) * pPartyList->Scale;
+					Vector2 iconOffset = ( new Vector2( -7, -5 ) + mConfiguration.PartyListIconOffset ) * pPartyList->Scale;
+					Vector2 iconSize = new Vector2( pIconNode->Width / 3, pIconNode->Height / 3 ) * mConfiguration.PartyListIconScale * pPartyList->Scale;
 					Vector2 iconPos = new Vector2(	pPartyList->X + pPartyMemberNode->AtkResNode.X * pPartyList->Scale + pIconNode->X * pPartyList->Scale + pIconNode->Width * pPartyList->Scale / 2,
 													pPartyList->Y + pPartyMemberNode->AtkResNode.Y * pPartyList->Scale + pIconNode->Y * pPartyList->Scale + pIconNode->Height * pPartyList->Scale / 2 );
 					iconPos += iconOffset;
@@ -683,8 +691,8 @@ namespace ReadyCheckHelper
 				var pIconNode = pAllianceMemberNode->Component->UldManager.NodeListSize > iconNodeIndex ? pAllianceMemberNode->Component->UldManager.NodeList[iconNodeIndex] : (AtkResNode*) IntPtr.Zero;
 				if( (IntPtr)pIconNode != IntPtr.Zero )
 				{
-					Vector2 iconOffset = new Vector2( 0, 0 ) * pAllianceList->Scale;
-					Vector2 iconSize = new Vector2( pIconNode->Width / 3, pIconNode->Height / 3 ) * pAllianceList->Scale;
+					Vector2 iconOffset = ( new Vector2( 0, 0 ) + mConfiguration.AllianceListIconOffset ) * pAllianceList->Scale;
+					Vector2 iconSize = new Vector2( pIconNode->Width / 3, pIconNode->Height / 3 ) * mConfiguration.AllianceListIconScale * pAllianceList->Scale;
 					Vector2 iconPos = new Vector2(	pAllianceList->X + pAllianceMemberNode->AtkResNode.X * pAllianceList->Scale + pIconNode->X * pAllianceList->Scale + pIconNode->Width * pAllianceList->Scale / 2,
 													pAllianceList->Y + pAllianceMemberNode->AtkResNode.Y * pAllianceList->Scale + pIconNode->Y * pAllianceList->Scale + pIconNode->Height * pAllianceList->Scale / 2 );
 					iconPos += iconOffset;
@@ -723,8 +731,8 @@ namespace ReadyCheckHelper
 					var pIconNode = pPartyMemberNode->Component->UldManager.NodeListSize > iconNodeIndex ? pPartyMemberNode->Component->UldManager.NodeList[iconNodeIndex] : (AtkResNode*) IntPtr.Zero;
 					if( (IntPtr)pIconNode != IntPtr.Zero )
 					{
-						Vector2 iconOffset = new Vector2( 0, 0 ) * pAllianceList->Scale;
-						Vector2 iconSize = new Vector2( pIconNode->Width / 2, pIconNode->Height / 2 ) * pAllianceList->Scale;
+						Vector2 iconOffset = ( new Vector2( 0, 0 ) + mConfiguration.CrossWorldAllianceListIconOffset ) * pAllianceList->Scale;
+						Vector2 iconSize = new Vector2( pIconNode->Width / 2, pIconNode->Height / 2 ) * mConfiguration.CrossWorldAllianceListIconScale * pAllianceList->Scale;
 						Vector2 iconPos = new Vector2(	pAllianceList->X + pAllianceNode->AtkResNode.X * pAllianceList->Scale + pPartyMemberNode->AtkResNode.X * pAllianceList->Scale + pIconNode->X * pAllianceList->Scale + pIconNode->Width * pAllianceList->Scale / 2,
 														pAllianceList->Y + pAllianceNode->AtkResNode.Y * pAllianceList->Scale + pPartyMemberNode->AtkResNode.Y * pAllianceList->Scale + pIconNode->Y * pAllianceList->Scale + pIconNode->Height * pAllianceList->Scale / 2 );
 						iconPos += iconOffset;

@@ -2,6 +2,7 @@
 using Dalamud.Plugin;
 using Newtonsoft.Json;
 using System;
+using System.Numerics;
 
 namespace ReadyCheckHelper
 {
@@ -76,6 +77,48 @@ namespace ReadyCheckHelper
 		{
 			get { return mTimeUntilClearReadyCheckOverlay_Sec; }
 			set { mTimeUntilClearReadyCheckOverlay_Sec = value; }
+		}
+
+		public Vector2 mPartyListIconOffset = Vector2.Zero;
+		public Vector2 PartyListIconOffset
+		{
+			get { return mPartyListIconOffset; }
+			set { mPartyListIconOffset = value; }
+		}
+
+		public Vector2 mAllianceListIconOffset = Vector2.Zero;
+		public Vector2 AllianceListIconOffset
+		{
+			get { return mAllianceListIconOffset; }
+			set { mAllianceListIconOffset = value; }
+		}
+
+		public Vector2 mCrossWorldAllianceListIconOffset = Vector2.Zero;
+		public Vector2 CrossWorldAllianceListIconOffset
+		{
+			get { return mCrossWorldAllianceListIconOffset; }
+			set { mCrossWorldAllianceListIconOffset = value; }
+		}
+
+		public float mPartyListIconScale = 1f;
+		public float PartyListIconScale
+		{
+			get { return mPartyListIconScale; }
+			set { mPartyListIconScale = value; }
+		}
+
+		public float mAllianceListIconScale = 1f;
+		public float AllianceListIconScale
+		{
+			get { return mAllianceListIconScale; }
+			set { mAllianceListIconScale = value; }
+		}
+
+		public float mCrossWorldAllianceListIconScale = 1f;
+		public float CrossWorldAllianceListIconScale
+		{
+			get { return mCrossWorldAllianceListIconScale; }
+			set { mCrossWorldAllianceListIconScale = value; }
 		}
 
 		//	Backing field as an int to work with ImGui.
