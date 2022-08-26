@@ -130,9 +130,9 @@ namespace ReadyCheckHelper
 					ImGui.Spacing();
 					ImGui.Text( Loc.Localize( "Config Section: Icon Size/Offset", "Party and Alliance List Icon Size/Offset:" ) );
 					ImGui.DragFloat2( Loc.Localize( "Config Option: Party List Icon Offset", "Party List Icon Offset" ) + "###PartyListIconOffset", ref mConfiguration.mPartyListIconOffset, 1f, -100f, 100f );
-					ImGui.DragFloat( Loc.Localize( "Config Option: Party List Icon Scale", "Party List Icon Scale" ) + "###PartyListIconScale", ref mConfiguration.mPartyListIconScale, 0.1f, 0.3f, 5.0f, "%d", ImGuiSliderFlags.AlwaysClamp );
+					ImGui.DragFloat( Loc.Localize( "Config Option: Party List Icon Scale", "Party List Icon Scale" ) + "###PartyListIconScale", ref mConfiguration.mPartyListIconScale, 0.1f, 0.3f, 5.0f, "%f", ImGuiSliderFlags.AlwaysClamp );
 					ImGui.DragFloat2( Loc.Localize( "Config Option: Alliance List Icon Offset", "Alliance List Icon Offset" ) + "###AllianceListIconOffset", ref mConfiguration.mAllianceListIconOffset, 1f, -100f, 100f );
-					ImGui.DragFloat( Loc.Localize( "Config Option: Alliance List Icon Scale", "Alliance List Icon Scale" ) + "###AllianceListIconScale", ref mConfiguration.mAllianceListIconScale, 0.1f, 0.3f, 5.0f, "%d", ImGuiSliderFlags.AlwaysClamp );
+					ImGui.DragFloat( Loc.Localize( "Config Option: Alliance List Icon Scale", "Alliance List Icon Scale" ) + "###AllianceListIconScale", ref mConfiguration.mAllianceListIconScale, 0.1f, 0.3f, 5.0f, "%f", ImGuiSliderFlags.AlwaysClamp );
 					//ImGui.DragFloat2( Loc.Localize( "Config Option: Cross-World Alliance List Icon Offset", "Cross-World Alliance List Icon Offset" ) + "###CrossWorldAllianceListIconOffset", ref mConfiguration.mCrossWorldAllianceListIconOffset, 1f, -100f, 100f );
 					//ImGui.DragFloat( Loc.Localize( "Config Option: Cross-World Alliance List Icon Scale", "Cross-World Alliance List Icon Scale" ) + "###CrossWorldAllianceListIconScale", ref mConfiguration.mCrossWorldAllianceListIconScale, 0.1f, 0.3f, 5.0f, "%d", ImGuiSliderFlags.AlwaysClamp );
 					ImGui.Unindent();
@@ -647,7 +647,7 @@ namespace ReadyCheckHelper
 		unsafe protected void DrawOnPartyList( int listIndex, MemoryHandler.ReadyCheckStateEnum readyCheckState, AtkUnitBase* pPartyList, ImDrawListPtr drawList )
 		{
 			if( listIndex < 0 || listIndex > 7 ) return;
-			int partyMemberNodeIndex = 21 - listIndex;
+			int partyMemberNodeIndex = 22 - listIndex;
 			int iconNodeIndex = 4;
 
 			var pPartyMemberNode = pPartyList->UldManager.NodeListSize > partyMemberNodeIndex ? (AtkComponentNode*) pPartyList->UldManager.NodeList[partyMemberNodeIndex] : (AtkComponentNode*) IntPtr.Zero;
