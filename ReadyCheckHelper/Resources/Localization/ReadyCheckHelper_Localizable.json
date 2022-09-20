@@ -71,6 +71,26 @@
     "message": "Changes to this setting will not take effect until the next ready check concludes.",
     "description": "PluginUI.DrawSettingsWindow"
   },
+  "Config Section: Icon Size/Offset": {
+    "message": "Party and Alliance List Icon Size/Offset:",
+    "description": "PluginUI.DrawSettingsWindow"
+  },
+  "Config Option: Party List Icon Offset": {
+    "message": "Party List Icon Offset",
+    "description": "PluginUI.DrawSettingsWindow"
+  },
+  "Config Option: Party List Icon Scale": {
+    "message": "Party List Icon Scale",
+    "description": "PluginUI.DrawSettingsWindow"
+  },
+  "Config Option: Alliance List Icon Offset": {
+    "message": "Alliance List Icon Offset",
+    "description": "PluginUI.DrawSettingsWindow"
+  },
+  "Config Option: Alliance List Icon Scale": {
+    "message": "Alliance List Icon Scale",
+    "description": "PluginUI.DrawSettingsWindow"
+  },
   "Button: Save and Close": {
     "message": "Save and Close",
     "description": "PluginUI.DrawSettingsWindow"
