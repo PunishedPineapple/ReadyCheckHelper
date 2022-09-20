@@ -5,6 +5,11 @@ using Dalamud.Game;
 using Dalamud.Hooking;
 using Dalamud.Logging;
 
+using FFXIVClientStructs.FFXIV.Client.Game.Group;
+using FFXIVClientStructs.FFXIV.Client.System.Memory;
+using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Component.GUI;
+
 namespace ReadyCheckHelper
 {
 	public static class MemoryHandler
@@ -23,7 +28,7 @@ namespace ReadyCheckHelper
 				mfpOnReadyCheckInitiated = sigScanner.ScanText( "40 ?? 48 83 ?? ?? 48 8B ?? E8 ?? ?? ?? ?? 48 ?? ?? ?? 33 C0 ?? 89" );
 				if( mfpOnReadyCheckInitiated != IntPtr.Zero )
 				{
-					mReadyCheckInitiatedHook = new Hook<ReadyCheckFuncDelegate>( mfpOnReadyCheckInitiated, mdReadyCheckInitiated );
+					mReadyCheckInitiatedHook = Hook<ReadyCheckFuncDelegate>.FromAddress( mfpOnReadyCheckInitiated, ReadyCheckInitiatedDetour );
 					mReadyCheckInitiatedHook.Enable();
 				}
 
@@ -31,7 +36,7 @@ namespace ReadyCheckHelper
 				mfpOnReadyCheckEnd = sigScanner.ScanText( "40 ?? 53 48 ?? ?? ?? ?? 48 81 ?? ?? ?? ?? ?? 48 8B ?? ?? ?? ?? ?? 48 33 ?? ?? 89 ?? ?? ?? 83 ?? ?? ?? 48 8B ?? 75 ?? 48" );
 				if( mfpOnReadyCheckEnd != IntPtr.Zero )
 				{
-					mReadyCheckEndHook = new Hook<ReadyCheckFuncDelegate>( mfpOnReadyCheckEnd, mdReadyCheckEnd );
+					mReadyCheckEndHook = Hook<ReadyCheckFuncDelegate>.FromAddress( mfpOnReadyCheckEnd, ReadyCheckEndDetour );
 					mReadyCheckEndHook.Enable();
 				}
 			}
@@ -43,10 +48,11 @@ namespace ReadyCheckHelper
 
 		public static void Uninit()
 		{
-			mReadyCheckInitiatedHook.Disable();
-			mReadyCheckEndHook.Disable();
-			mReadyCheckInitiatedHook.Dispose();
-			mReadyCheckEndHook.Dispose();
+			mReadyCheckInitiatedHook?.Disable();
+			mReadyCheckEndHook?.Disable();
+			mReadyCheckInitiatedHook?.Dispose();
+			mReadyCheckEndHook?.Dispose();
+			mReadyCheckInitiatedHook = null;
 			mReadyCheckEndHook = null;
 			mpReadyCheckObject = IntPtr.Zero;
 		}
@@ -137,6 +143,55 @@ namespace ReadyCheckHelper
 			return retVal;
 		}
 
+		internal static unsafe PartyListLayoutResult? GetHUDIndicesForChar( UInt64 contentID, UInt32 objectID )
+		{
+			if( contentID == 0  && ( objectID == 0 || objectID == 0xE0000000 ) )
+			{
+				return null;
+			}
+
+			//	MS please give us an ?-> operator ;_;
+			if( FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance() == null ||
+				FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance() == null ||
+				FFXIVClientStructs.FFXIV.Client.System.Framework.Framework.Instance()->GetUiModule() == null ||
+				FFXIVClientStructs.FFXIV.Client.System.Framework.Framework.Instance()->GetUiModule()->GetAgentModule() == null ||
+				FFXIVClientStructs.FFXIV.Client.System.Framework.Framework.Instance()->GetUiModule()->GetAgentModule()->GetAgentHUD() == null )
+			{
+				return null;
+			}
+
+			var pAgentHUD = FFXIVClientStructs.FFXIV.Client.System.Framework.Framework.Instance()->GetUiModule()->GetAgentModule()->GetAgentHUD();
+
+			//	We're only in a crossworld party if the cross realm proxy says we are; however, it can say we're cross-realm when
+			//	we're in a regular party if we entered an instance as a cross-world party, so account for that too.
+			if( FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->MemberCount > 0 )
+			{
+				for( int i = 0; i < 8; ++i )
+				{
+					var offset = i * Marshal.SizeOf<PartyListCharInfo>();
+					var pCharData = pAgentHUD->PartyMemberList + offset;
+					var charData = *(PartyListCharInfo*)pCharData;
+					if( contentID > 0 && contentID == charData.ContentID ) return new( false, 0, i );
+					if( objectID > 0 && objectID != 0xE0000000 && objectID == charData.ObjectID ) return new( false, 0, i );
+				}
+				for( int i = 0; i < 40; ++i )
+				{
+					if( objectID > 0 && objectID != 0xE0000000 && objectID == pAgentHUD->RaidMemberIds[i] )
+					{
+						return new( false, i / 8 + 1, i % 8 );
+					}
+				}
+			}
+			else if( FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance()->IsCrossRealm > 0 )
+			{
+				var pGroupMember = FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.GetMemberByContentId( contentID );
+				if( pGroupMember == null || contentID == 0 ) return null;
+				return new( true, pGroupMember->GroupIndex, pGroupMember->MemberIndex );
+			}
+
+			return null;
+		}
+
 		//	Magic Numbers
 		private static readonly int mArrayOffset = 0xB0;
 		private static readonly int mArrayLength = 96;
@@ -150,11 +205,9 @@ namespace ReadyCheckHelper
 		//	Delgates
 		private delegate void ReadyCheckFuncDelegate( IntPtr ptr );
 
-		private static readonly ReadyCheckFuncDelegate mdReadyCheckInitiated = new( ReadyCheckInitiatedDetour );
 		private static IntPtr mfpOnReadyCheckInitiated = IntPtr.Zero;
 		private static Hook<ReadyCheckFuncDelegate> mReadyCheckInitiatedHook;
 
-		private static readonly ReadyCheckFuncDelegate mdReadyCheckEnd = new( ReadyCheckEndDetour );
 		private static IntPtr mfpOnReadyCheckEnd = IntPtr.Zero;
 		private static Hook<ReadyCheckFuncDelegate> mReadyCheckEndHook;
 
@@ -182,5 +235,19 @@ namespace ReadyCheckHelper
 			NotReady = 3,
 			CrossWorldMemberNotPresent = 4
 		}
+	}
+
+	internal struct PartyListLayoutResult
+	{
+		internal PartyListLayoutResult( bool crossWorld, int groupNumber, int partyMemberIndex )
+		{
+			CrossWorld = crossWorld;
+			GroupNumber = groupNumber;
+			PartyMemberIndex = partyMemberIndex;
+		}
+
+		internal bool CrossWorld;
+		internal int GroupNumber;
+		internal int PartyMemberIndex;
 	}
 }

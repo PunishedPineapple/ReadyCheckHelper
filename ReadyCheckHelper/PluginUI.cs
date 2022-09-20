@@ -4,6 +4,7 @@ using System.Numerics;
 using System.Linq;
 using System.Globalization;
 using System.IO;
+using System.Runtime.InteropServices;
 
 using ImGuiNET;
 using ImGuiScene;
@@ -16,6 +17,7 @@ using Dalamud.Interface;
 using Dalamud.Game;
 using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using CheapLoc;
 
 namespace ReadyCheckHelper
@@ -32,7 +34,6 @@ namespace ReadyCheckHelper
 			mConfiguration = configuration;
 			mDataManager = dataManager;
 			mGameGui = gameGui;
-			mHudManager = new HudManager( sigScanner );
 		}
 
 		//	Destruction
@@ -41,11 +42,9 @@ namespace ReadyCheckHelper
 			mReadyCheckIconTexture?.Dispose();
 			mUnknownStatusIconTexture?.Dispose();
 			mNotPresentIconTexture?.Dispose();
-			mHudManager?.Dispose();
 			mReadyCheckIconTexture = null;
 			mUnknownStatusIconTexture = null;
 			mNotPresentIconTexture = null;
-			mHudManager = null;
 		}
 
 		public void Initialize()
@@ -175,12 +174,12 @@ namespace ReadyCheckHelper
 				{
 					//	We have to sort and reorganize this yet again because of how ImGui tables work ;_;
 					list.Sort( ( a, b ) => a.GroupIndex.CompareTo( b.GroupIndex ) );
-					var tableList = new List<List<Plugin.CorrelatedReadyCheckEntry>>();
+					var tableList = new List<List<CorrelatedReadyCheckEntry>>();
 					foreach( var player in list )
 					{
 						if( tableList.Count <= player.GroupIndex )
 						{
-							tableList.Add( new List<Plugin.CorrelatedReadyCheckEntry>() );
+							tableList.Add( new List<CorrelatedReadyCheckEntry>() );
 						}
 						tableList[player.GroupIndex].Add( player );
 					}
@@ -261,6 +260,7 @@ namespace ReadyCheckHelper
 				{
 					unsafe
 					{
+						var pAgentHUD = FFXIVClientStructs.FFXIV.Client.System.Framework.Framework.Instance()->GetUiModule()->GetAgentModule()->GetAgentHUD();
 						if( (IntPtr)FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance() == IntPtr.Zero )
 						{
 							ImGui.Text( "The GroupManager instance pointer is null!" );
@@ -273,7 +273,7 @@ namespace ReadyCheckHelper
 						{
 							var readyCheckdata = MemoryHandler.GetReadyCheckInfo();
 
-							ImGui.Columns( 4 );
+							ImGui.Columns( 5 );
 							ImGui.Text( "General Info:" );
 
 							ImGui.Text( $"Number of Party Members: {FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->MemberCount}" );
@@ -290,7 +290,7 @@ namespace ReadyCheckHelper
 							ImGui.Spacing();
 							ImGui.Spacing();
 							ImGui.Text( $"Ready Check Object Address: 0x{MemoryHandler.DEBUG_GetReadyCheckObjectAddress():X}" );
-							ImGui.Text( $"Hud Agent Address: 0x{mHudManager._hudAgentPtr:X}" );
+							ImGui.Text( $"Hud Agent Address: 0x{new IntPtr(pAgentHUD):X}" );
 							ImGui.Checkbox( "Show Raw Readycheck Data", ref mDebugRawWindowVisible );
 							ImGui.Checkbox( "Show Processed Readycheck Data", ref mDebugProcessedWindowVisible );
 							ImGui.Checkbox( "Debug Drawing on Party List", ref mDEBUG_DrawPlaceholderData );
@@ -371,6 +371,21 @@ namespace ReadyCheckHelper
 										ImGui.Text( $"Group: {pGroupMember->GroupIndex}, OID: {pGroupMember->ObjectId:X8}, CID: {pGroupMember->ContentId:X16}, Name: {name}" );
 									}
 								}
+							}
+							ImGui.NextColumn();
+							ImGui.Text( $"AgentHUD Group Size: {pAgentHUD->RaidGroupSize}" );
+							ImGui.Text( $"AgentHUD Party Size: {pAgentHUD->PartyMemberCount}" );
+							ImGui.Text( "AgentHUD Party Members:" );
+							IntPtr pPartyData = new( pAgentHUD->PartyMemberList );
+							for( int i = 0; i < 8; ++i )
+							{
+								var partyMemberData = Marshal.PtrToStructure<PartyListCharInfo>( new( pPartyData.ToInt64() + ( i * Marshal.SizeOf<PartyListCharInfo>() ) ) );
+								ImGui.Text( $"Object Address: 0x{partyMemberData.ObjectAddress:X}\r\nName Address: 0x{partyMemberData.ObjectNameAddress:X}\r\nName: {partyMemberData.GetName()}\r\nCID: {partyMemberData.ContentID:X}\r\nOID: {partyMemberData.ObjectID:X}\r\nUnknown: {partyMemberData.Unknown:X}" );
+							}
+							ImGui.Text( "AgentHUD Raid Members:" );
+							for( int i = 0; i < 40; ++i )
+							{
+								ImGui.Text( $"{i:D2}: {pAgentHUD->RaidMemberIds[i]:X8}" );
 							}
 							ImGui.Columns();
 						}
@@ -546,94 +561,29 @@ namespace ReadyCheckHelper
 					}
 					else
 					{
-						//	For finding out order in the party list, use HudManager for regular parties/alliances.  Cross-world seems to be just the order that the proxy has them indexed.
-						if( (IntPtr)FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance() != IntPtr.Zero &&
-							(IntPtr)FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance() != IntPtr.Zero )
+						var data = mPlugin.GetProcessedReadyCheckData();
+						if( data != null )
 						{
-							var data = mPlugin.GetProcessedReadyCheckData();
-							if( data != null )
+							foreach( var result in data )
 							{
-								//	We're only in a crossworld party if the cross realm proxy says we are; however, it can say we're cross-realm when
-								//	we're in a regular party if we entered an instance as a cross-world party, so account for that too.
-								if( FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance()->MemberCount > 0  )
+								var indices = MemoryHandler.GetHUDIndicesForChar( result.ContentID, result.ObjectID );
+								if( indices == null ) continue;
+								switch( indices.Value.GroupNumber )
 								{
-									foreach( var result in data )
-									{
-										if( result.GroupIndex == 0 )
-										{
-											bool resultFound = false;
-											if( result.ContentID != 0 )
-											{
-												var idx = mHudManager.FindPartyMemberByCID( result.ContentID );
-												if( idx != null )
-												{
-													resultFound = true;
-													if( (IntPtr)pPartyList != IntPtr.Zero && pPartyList->IsVisible )
-													{
-														DrawOnPartyList( idx.Value, result.ReadyState, pPartyList, ImGui.GetWindowDrawList() );
-													}
-												}
-											}
-											else if( result.ObjectID is not 0 and not 0xE0000000 )
-											{
-												var group = mHudManager.FindGroupMemberByOID( result.ObjectID );
-												if( group != null )
-												{
-													resultFound = true;
-													if( group.Value.groupIdx == 0 && (IntPtr)pPartyList != IntPtr.Zero && pPartyList->IsVisible )
-													{
-														DrawOnPartyList( group.Value.idx, result.ReadyState, pPartyList, ImGui.GetWindowDrawList() );
-													}
-												}
-											}
-												
-											if( !resultFound /*&& useStringComparisonFallback*/ )
-											{
-												//***** TODO: Do a fallback comparison by player name if we want to.  Need to investigate performance doing this. *****
-											}
-										}
-										//***** TODO: If an overworld alliance is still possible, what we have here will still not be good enough. *****
-										else
-										{
-											bool resultFound = false;
-											if( result.ObjectID is not 0 and not 0xE0000000 )
-											{
-												var group = mHudManager.FindGroupMemberByOID( result.ObjectID );
-												if( group != null )
-												{
-													resultFound = true;
-													if( group.Value.groupIdx == 1 && (IntPtr)pAlliance1List != IntPtr.Zero && pAlliance1List->IsVisible )
-													{
-														DrawOnAllianceList( group.Value.idx, result.ReadyState, pAlliance1List, ImGui.GetWindowDrawList() );
-													}
-													else if( group.Value.groupIdx == 2 && (IntPtr)pAlliance2List != IntPtr.Zero && pAlliance2List->IsVisible )
-													{
-														DrawOnAllianceList( group.Value.idx, result.ReadyState, pAlliance2List, ImGui.GetWindowDrawList() );
-													}
-												}
-											}
-
-											if( !resultFound /*&& useStringComparisonFallback*/ )
-											{
-												//***** TODO: Do a fallback comparison by player name if we want to.  Need to investigate performance doing this. *****
-											}
-										}
-									}
-								}
-								else if( FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance()->IsCrossRealm > 0 )
-								{
-									foreach( var result in data )
-									{
-										if( result.GroupIndex == 0 && (IntPtr)pPartyList != IntPtr.Zero && pPartyList->IsVisible )
-										{
-											DrawOnPartyList( result.MemberIndex, result.ReadyState, pPartyList, ImGui.GetWindowDrawList() );
-										}
-										else if( result.GroupIndex >= 1 && (IntPtr)pCrossWorldAllianceList != IntPtr.Zero && pCrossWorldAllianceList->IsVisible )
-										{
-											//***** TODO: Remove the debug conditional on this when we can figure out what is causing it to occasionally crash. *****
-											if( mDEBUG_AllowCrossWorldAllianceDrawing ) DrawOnCrossWorldAllianceList( result.GroupIndex, result.MemberIndex, result.ReadyState, pAlliance1List, ImGui.GetWindowDrawList() );
-										}
-									}
+									case 0:
+										DrawOnPartyList( indices.Value.PartyMemberIndex, result.ReadyState, pPartyList, ImGui.GetWindowDrawList() );
+										break;
+									case 1:
+										if( indices.Value.CrossWorld ) break;	//***** TODO: Do something when crossworld alliances are fixed.
+										else DrawOnAllianceList( indices.Value.PartyMemberIndex, result.ReadyState, pAlliance1List, ImGui.GetWindowDrawList() );
+										break;
+									case 2:
+										if( indices.Value.CrossWorld ) break;   //***** TODO: Do something when crossworld alliances are fixed.
+										else DrawOnAllianceList( indices.Value.PartyMemberIndex, result.ReadyState, pAlliance2List, ImGui.GetWindowDrawList() );
+										break;
+									default:
+										if( indices.Value.CrossWorld ) break;   //***** TODO: Do something when crossworld alliances are fixed.
+										break;
 								}
 							}
 						}
@@ -783,8 +733,6 @@ namespace ReadyCheckHelper
 		protected Configuration mConfiguration;
 		protected DataManager mDataManager;
 		protected GameGui mGameGui;
-
-		protected HudManager mHudManager;
 
 		protected Dictionary<uint, string> JobDict { get; set; } = new Dictionary<uint, string>();
 

@@ -20,7 +20,7 @@ using CheapLoc;
 
 namespace ReadyCheckHelper
 {
-	public class Plugin : IDalamudPlugin
+	public sealed class Plugin : IDalamudPlugin
 	{
 		//	Initialization
 		public Plugin(
@@ -99,7 +99,7 @@ namespace ReadyCheckHelper
 			mTimedOverlayCancellationSource = null;
 		}
 
-		protected void OnLanguageChanged( string langCode )
+		private void OnLanguageChanged( string langCode )
 		{
 			var allowedLang = new List<string>{ "es", "fr", "ja" };
 
@@ -126,7 +126,7 @@ namespace ReadyCheckHelper
 		}
 
 		//	Text Commands
-		protected void ProcessTextCommand( string command, string args )
+		private void ProcessTextCommand( string command, string args )
 		{
 			//*****TODO: Don't split, just substring off of the first space so that other stuff is preserved verbatim.
 			//	Seperate into sub-command and paramters.
@@ -188,7 +188,7 @@ namespace ReadyCheckHelper
 			}
 		}
 
-		protected string ProcessTextCommand_Help( string args )
+		private string ProcessTextCommand_Help( string args )
 		{
 			if( args.ToLower() == "config" )
 			{
@@ -212,22 +212,22 @@ namespace ReadyCheckHelper
 			}
 		}
 
-		protected void DrawUI()
+		private void DrawUI()
 		{
 			mUI.Draw();
 		}
 
-		protected void DrawConfigUI()
+		private void DrawConfigUI()
 		{
 			mUI.SettingsWindowVisible = true;
 		}
 
-		protected void OnGameFrameworkUpdate( Framework framework )
+		private void OnGameFrameworkUpdate( Framework framework )
 		{
 			if( mClientState.IsLoggedIn && ReadyCheckActive ) ProcessReadyCheckResults();
 		}
 
-		protected void OnReadyCheckInitiated( object sender, System.EventArgs e )
+		private void OnReadyCheckInitiated( object sender, System.EventArgs e )
 		{
 			//	Shouldn't really be getting here if someone is logged out, but better safe than sorry.
 			if( !mClientState.IsLoggedIn ) return;
@@ -238,7 +238,7 @@ namespace ReadyCheckHelper
 			mTimedOverlayCancellationSource?.Cancel();
 		}
 
-		protected void OnReadyCheckCompleted( object sender, System.EventArgs e )
+		private void OnReadyCheckCompleted( object sender, System.EventArgs e )
 		{
 			//	Shouldn't really be getting here if someone is logged out, but better safe than sorry.
 			if( !mClientState.IsLoggedIn ) return;
@@ -298,7 +298,7 @@ namespace ReadyCheckHelper
 			}
 		}
 
-		unsafe protected void ProcessReadyCheckResults()
+		private unsafe void ProcessReadyCheckResults()
 		{
 			if( (IntPtr)FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance() != IntPtr.Zero )
 			{
@@ -319,7 +319,7 @@ namespace ReadyCheckHelper
 			}
 		}
 
-		unsafe protected void ProcessReadyCheckResults_Regular()
+		private unsafe void ProcessReadyCheckResults_Regular()
 		{
 			if( (IntPtr)FFXIVClientStructs.FFXIV.Client.Game.Group.GroupManager.Instance() != IntPtr.Zero )
 			{
@@ -365,7 +365,7 @@ namespace ReadyCheckHelper
 								//	If it's before we've found ourselves, look ahead by one in the ready check data.
 								else if( !foundSelf )
 								{
-									readyCheckProcessedList.Add( new CorrelatedReadyCheckEntry( name, (UInt64)pFoundPartyMember->ContentID, pFoundPartyMember->ObjectID, readyCheckData[i+1].ReadyFlag, 0, (byte)(i + 1) ) );
+									readyCheckProcessedList.Add( new CorrelatedReadyCheckEntry( name, (UInt64)pFoundPartyMember->ContentID, pFoundPartyMember->ObjectID, readyCheckData[i + 1].ReadyFlag, 0, (byte)( i + 1 ) ) );
 								}
 								//	Otherwise, use the same index in the ready check data.
 								else
@@ -375,7 +375,7 @@ namespace ReadyCheckHelper
 							}
 						}
 						//	For the alliance members, there should be object IDs to make matching easy.
-						else if( readyCheckData[i].ID > 0 && (readyCheckData[i].ID & 0xFFFFFFFF) != 0xE0000000 )
+						else if( readyCheckData[i].ID > 0 && ( readyCheckData[i].ID & 0xFFFFFFFF ) != 0xE0000000 )
 						{
 							Tuple<UInt64, string, byte, byte> temp = null;
 							if( allianceMemberDict.TryGetValue( (uint)readyCheckData[i].ID, out temp ) )
@@ -400,7 +400,7 @@ namespace ReadyCheckHelper
 			}
 		}
 
-		unsafe protected void ProcessReadyCheckResults_CrossWorld()
+		private unsafe void ProcessReadyCheckResults_CrossWorld()
 		{
 			if( (IntPtr)FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyCrossRealm.Instance() != IntPtr.Zero )
 			{
@@ -483,7 +483,7 @@ namespace ReadyCheckHelper
 			}
 		}
 
-		protected void ShowBestAvailableReadyCheckWindow()
+		private void ShowBestAvailableReadyCheckWindow()
 		{
 			unsafe
 			{
@@ -499,7 +499,7 @@ namespace ReadyCheckHelper
 			}
 		}
 
-		protected void OnConditionChanged( ConditionFlag flag, bool value )
+		private void OnConditionChanged( ConditionFlag flag, bool value )
 		{
 			if( flag == ConditionFlag.InCombat )
 			{
@@ -517,12 +517,12 @@ namespace ReadyCheckHelper
 			}
 		}
 
-		protected void OnTerritoryChanged( object sender, UInt16 ID )
+		private void OnTerritoryChanged( object sender, UInt16 ID )
 		{
 			if( mConfiguration.ClearReadyCheckOverlayEnteringInstance && mInstancedTerritories.Contains( ID ) ) mUI.InvalidateReadyCheck();
 		}
 
-		protected void OnLogout( object sender, System.EventArgs e )
+		private void OnLogout( object sender, System.EventArgs e )
 		{
 			ReadyCheckActive = false;
 			mTimedOverlayCancellationSource?.Cancel();
@@ -530,7 +530,7 @@ namespace ReadyCheckHelper
 			mProcessedReadyCheckData = null;
 		}
 
-		public List<CorrelatedReadyCheckEntry> GetProcessedReadyCheckData()
+		internal List<CorrelatedReadyCheckEntry> GetProcessedReadyCheckData()
 		{
 			lock( mProcessedReadyCheckDataLockObj )
 			{
@@ -538,52 +538,32 @@ namespace ReadyCheckHelper
 			}
 		}
 
-		protected void PopulateInstancedTerritoriesList()
+		private void PopulateInstancedTerritoriesList()
 		{
 			ExcelSheet<ContentFinderCondition> contentFinderSheet = mDataManager.GetExcelSheet<ContentFinderCondition>();
 			foreach( var zone in contentFinderSheet ) mInstancedTerritories.Add( zone.TerritoryType.Row );
 		}
 
 		public string Name => "Ready Check Helper";
-		protected const string mTextCommandName = "/pready";
+		private const string mTextCommandName = "/pready";
 		private readonly Dalamud.Game.Text.SeStringHandling.Payloads.DalamudLinkPayload mOpenReadyCheckWindowLink;
 
-		protected List<UInt32> mInstancedTerritories = new();
-		protected List<CorrelatedReadyCheckEntry> mProcessedReadyCheckData;
-		protected Object mProcessedReadyCheckDataLockObj = new();
-		protected CancellationTokenSource mTimedOverlayCancellationSource = null;
+		private List<UInt32> mInstancedTerritories = new();
+		private List<CorrelatedReadyCheckEntry> mProcessedReadyCheckData;
+		private Object mProcessedReadyCheckDataLockObj = new();
+		private CancellationTokenSource mTimedOverlayCancellationSource = null;
 		public bool ReadyCheckActive { get; protected set; } = false;
 
-		protected DalamudPluginInterface mPluginInterface;
-		protected Framework mFramework;
-		protected ClientState mClientState;
-		protected CommandManager mCommandManager;
-		protected Dalamud.Game.ClientState.Conditions.Condition mCondition;
-		protected ChatGui mChatGui;
-		protected GameGui mGameGui;
-		protected SigScanner mSigScanner;
-		protected DataManager mDataManager;
-		protected Configuration mConfiguration;
-		protected PluginUI mUI;
-
-		public struct CorrelatedReadyCheckEntry
-		{
-			public CorrelatedReadyCheckEntry( string name, UInt64 contentID, UInt32 objectID, MemoryHandler.ReadyCheckStateEnum readyState, byte groupIndex, byte memberIndex )
-			{
-				Name = name;
-				ContentID = contentID;
-				ObjectID = objectID;
-				ReadyState = readyState;
-				GroupIndex = groupIndex;
-				MemberIndex = memberIndex;
-			}
-
-			public string Name { get; private set; }
-			public UInt64 ContentID { get; private set; }
-			public UInt32 ObjectID { get; private set; }
-			public MemoryHandler.ReadyCheckStateEnum ReadyState { get; private set; }
-			public byte GroupIndex { get; private set; }
-			public byte MemberIndex { get; private set; }
-		}
+		private DalamudPluginInterface mPluginInterface;
+		private Framework mFramework;
+		private ClientState mClientState;
+		private CommandManager mCommandManager;
+		private Dalamud.Game.ClientState.Conditions.Condition mCondition;
+		private ChatGui mChatGui;
+		private GameGui mGameGui;
+		private SigScanner mSigScanner;
+		private DataManager mDataManager;
+		private Configuration mConfiguration;
+		private PluginUI mUI;
 	}
 }

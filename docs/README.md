@@ -24,5 +24,3 @@ If you would like to contribute translations for currently unsupported languages
 Code and executable are covered under the [MIT License](../LICENSE).  Final Fantasy XIV (and any associated data used by this plugin) is owned by and copyright Square Enix.
 
 Plugin icon modified from https://thenounproject.com/icon/people-1350210/ by b farias.
-
-HudManager code for obtaining party/alliance list indices lifted from [RezPls](https://github.com/Ottermandias/RezPls).
