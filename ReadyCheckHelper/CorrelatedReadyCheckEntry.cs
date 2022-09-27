@@ -10,7 +10,7 @@ namespace ReadyCheckHelper;
 //	for our data model since the game has this information scattered in annoying to use ways.
 internal struct CorrelatedReadyCheckEntry
 {
-	internal CorrelatedReadyCheckEntry( string name, UInt64 contentID, UInt32 objectID, MemoryHandler.ReadyCheckStateEnum readyState, byte groupIndex, byte memberIndex )
+	internal CorrelatedReadyCheckEntry( string name, UInt64 contentID, UInt32 objectID, ReadyCheckState readyState, byte groupIndex, byte memberIndex )
 	{
 		Name = name;
 		ContentID = contentID;
@@ -23,7 +23,7 @@ internal struct CorrelatedReadyCheckEntry
 	internal string Name { get; private set; }
 	internal UInt64 ContentID { get; private set; }
 	internal UInt32 ObjectID { get; private set; }
-	internal MemoryHandler.ReadyCheckStateEnum ReadyState { get; private set; }
+	internal ReadyCheckState ReadyState { get; private set; }
 	internal byte GroupIndex { get; private set; }
 	internal byte MemberIndex { get; private set; }	//	Take care using this; it can be very misleading.
 }

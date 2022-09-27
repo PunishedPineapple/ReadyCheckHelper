@@ -135,7 +135,7 @@ namespace ReadyCheckHelper
 			{
 				for( int i = 0; i < retVal.Length; ++i )
 				{
-					retVal[i] = new ReadyCheckInfo( (ReadyCheckStateEnum)(mRawReadyCheckArray[i * 2 + 1].ToInt64() & 0xFF),
+					retVal[i] = new ReadyCheckInfo( (ReadyCheckState)(mRawReadyCheckArray[i * 2 + 1].ToInt64() & 0xFF),
 													(UInt64)mRawReadyCheckArray[i * 2] );
 				}
 			}
@@ -217,23 +217,14 @@ namespace ReadyCheckHelper
 
 		public struct ReadyCheckInfo
 		{
-			public ReadyCheckInfo( ReadyCheckStateEnum readyFlag, UInt64 id )
+			public ReadyCheckInfo( ReadyCheckState readyFlag, UInt64 id )
 			{
 				ReadyFlag = readyFlag;
 				ID = id;
 			}
 
-			public ReadyCheckStateEnum ReadyFlag { get; private set; }
+			public ReadyCheckState ReadyFlag { get; private set; }
 			public UInt64 ID { get; private set; }
-		}
-
-		public enum ReadyCheckStateEnum : byte
-		{
-			Unknown = 0,
-			AwaitingResponse = 1,
-			Ready = 2,
-			NotReady = 3,
-			CrossWorldMemberNotPresent = 4
 		}
 	}
 

@@ -257,8 +257,8 @@ namespace ReadyCheckHelper
 			{
 				foreach( var person in mProcessedReadyCheckData )
 				{
-					if( person.ReadyState == MemoryHandler.ReadyCheckStateEnum.NotReady ||
-						person.ReadyState == MemoryHandler.ReadyCheckStateEnum.CrossWorldMemberNotPresent )
+					if( person.ReadyState == ReadyCheckState.NotReady ||
+						person.ReadyState == ReadyCheckState.CrossWorldMemberNotPresent )
 					{
 						notReadyList.Add( person.Name );
 					}
@@ -552,7 +552,7 @@ namespace ReadyCheckHelper
 		private List<CorrelatedReadyCheckEntry> mProcessedReadyCheckData;
 		private Object mProcessedReadyCheckDataLockObj = new();
 		private CancellationTokenSource mTimedOverlayCancellationSource = null;
-		public bool ReadyCheckActive { get; protected set; } = false;
+		public bool ReadyCheckActive { get; private set; } = false;
 
 		private DalamudPluginInterface mPluginInterface;
 		private Framework mFramework;

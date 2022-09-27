@@ -16,6 +16,7 @@ using Dalamud.Game.Gui;
 using Dalamud.Interface;
 using Dalamud.Game;
 using Dalamud.Memory;
+using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using CheapLoc;
@@ -71,6 +72,12 @@ namespace ReadyCheckHelper
 
 			//	Draw other UI stuff.
 			DrawOnPartyAllianceLists();
+
+			//*****TESTING*****
+			for( uint i = 0; i < 8; ++i )
+			{
+				UpdateReadyCheckImageNode( GameAddonEnum.PartyList, i, (ReadyCheckState)( i % 3 + 2 ) );
+			}
 		}
 
 		protected void DrawSettingsWindow()
@@ -194,15 +201,15 @@ namespace ReadyCheckHelper
 								ImGui.TableSetColumnIndex( j );
 								if( i < tableList[j].Count )
 								{
-									if( tableList[j][i].ReadyState == MemoryHandler.ReadyCheckStateEnum.Ready )
+									if( tableList[j][i].ReadyState == ReadyCheckState.Ready )
 									{
 										ImGui.Image( mReadyCheckIconTexture.ImGuiHandle, new Vector2( 24 ), new Vector2( 0.0f ), new Vector2( 0.5f, 1.0f ) );
 									}
-									else if( tableList[j][i].ReadyState == MemoryHandler.ReadyCheckStateEnum.NotReady )
+									else if( tableList[j][i].ReadyState == ReadyCheckState.NotReady )
 									{
 										ImGui.Image( mReadyCheckIconTexture.ImGuiHandle, new Vector2( 24 ), new Vector2( 0.5f, 0.0f ), new Vector2( 1.0f ) );
 									}
-									else if( tableList[j][i].ReadyState == MemoryHandler.ReadyCheckStateEnum.CrossWorldMemberNotPresent )
+									else if( tableList[j][i].ReadyState == ReadyCheckState.CrossWorldMemberNotPresent )
 									{
 										ImGui.Image( mNotPresentIconTexture.ImGuiHandle, new Vector2( 24 ) );
 									}
@@ -531,21 +538,21 @@ namespace ReadyCheckHelper
 						{
 							for( int i = 0; i < 8; ++i )
 							{
-								DrawOnPartyList( i, MemoryHandler.ReadyCheckStateEnum.Ready, pPartyList, ImGui.GetWindowDrawList() );
+								DrawOnPartyList( i, ReadyCheckState.Ready, pPartyList, ImGui.GetWindowDrawList() );
 							}
 						}
 						if( (IntPtr)pAlliance1List != IntPtr.Zero && pAlliance1List->IsVisible )
 						{
 							for( int i = 0; i < 8; ++i )
 							{
-								DrawOnAllianceList( i, MemoryHandler.ReadyCheckStateEnum.Ready, pAlliance1List, ImGui.GetWindowDrawList() );
+								DrawOnAllianceList( i, ReadyCheckState.Ready, pAlliance1List, ImGui.GetWindowDrawList() );
 							}
 						}
 						if( (IntPtr)pAlliance2List != IntPtr.Zero && pAlliance2List->IsVisible )
 						{
 							for( int i = 0; i < 8; ++i )
 							{
-								DrawOnAllianceList( i, MemoryHandler.ReadyCheckStateEnum.Ready, pAlliance2List, ImGui.GetWindowDrawList() );
+								DrawOnAllianceList( i, ReadyCheckState.Ready, pAlliance2List, ImGui.GetWindowDrawList() );
 							}
 						}
 						if( (IntPtr)pCrossWorldAllianceList != IntPtr.Zero && pCrossWorldAllianceList->IsVisible )
@@ -554,7 +561,7 @@ namespace ReadyCheckHelper
 							{
 								for( int i = 0; i < 8; ++i )
 								{
-									DrawOnCrossWorldAllianceList( j, i, MemoryHandler.ReadyCheckStateEnum.Ready, pCrossWorldAllianceList, ImGui.GetWindowDrawList() );
+									DrawOnCrossWorldAllianceList( j, i, ReadyCheckState.Ready, pCrossWorldAllianceList, ImGui.GetWindowDrawList() );
 								}
 							}
 						}
@@ -594,16 +601,16 @@ namespace ReadyCheckHelper
 			}
 		}
 
-		unsafe protected void DrawOnPartyList( int listIndex, MemoryHandler.ReadyCheckStateEnum readyCheckState, AtkUnitBase* pPartyList, ImDrawListPtr drawList )
+		unsafe protected void DrawOnPartyList( int listIndex, ReadyCheckState readyCheckState, AtkUnitBase* pPartyList, ImDrawListPtr drawList )
 		{
 			if( listIndex < 0 || listIndex > 7 ) return;
 			int partyMemberNodeIndex = 22 - listIndex;
 			int iconNodeIndex = 4;
 
-			var pPartyMemberNode = pPartyList->UldManager.NodeListSize > partyMemberNodeIndex ? (AtkComponentNode*) pPartyList->UldManager.NodeList[partyMemberNodeIndex] : (AtkComponentNode*) IntPtr.Zero;
+			var pPartyMemberNode = pPartyList->UldManager.NodeListCount > partyMemberNodeIndex ? (AtkComponentNode*) pPartyList->UldManager.NodeList[partyMemberNodeIndex] : (AtkComponentNode*) IntPtr.Zero;
 			if( (IntPtr)pPartyMemberNode != IntPtr.Zero )
 			{
-				var pIconNode = pPartyMemberNode->Component->UldManager.NodeListSize > iconNodeIndex ? pPartyMemberNode->Component->UldManager.NodeList[iconNodeIndex] : (AtkResNode*) IntPtr.Zero;
+				var pIconNode = pPartyMemberNode->Component->UldManager.NodeListCount > iconNodeIndex ? pPartyMemberNode->Component->UldManager.NodeList[iconNodeIndex] : (AtkResNode*) IntPtr.Zero;
 				if( (IntPtr)pIconNode != IntPtr.Zero )
 				{
 					//	Note: sub-nodes don't scale, so we have to account for the addon's scale.
@@ -613,15 +620,15 @@ namespace ReadyCheckHelper
 													pPartyList->Y + pPartyMemberNode->AtkResNode.Y * pPartyList->Scale + pIconNode->Y * pPartyList->Scale + pIconNode->Height * pPartyList->Scale / 2 );
 					iconPos += iconOffset;
 
-					if( readyCheckState == MemoryHandler.ReadyCheckStateEnum.NotReady )
+					if( readyCheckState == ReadyCheckState.NotReady )
 					{
 						drawList.AddImage( mReadyCheckIconTexture.ImGuiHandle, iconPos, iconPos + iconSize, new Vector2( 0.5f, 0.0f ), new Vector2( 1.0f ) );
 					}
-					else if( readyCheckState == MemoryHandler.ReadyCheckStateEnum.Ready )
+					else if( readyCheckState == ReadyCheckState.Ready )
 					{ 
 						drawList.AddImage( mReadyCheckIconTexture.ImGuiHandle, iconPos, iconPos + iconSize, new Vector2( 0.0f, 0.0f ), new Vector2( 0.5f, 1.0f ) );
 					}
-					else if( readyCheckState == MemoryHandler.ReadyCheckStateEnum.CrossWorldMemberNotPresent )
+					else if( readyCheckState == ReadyCheckState.CrossWorldMemberNotPresent )
 					{
 						drawList.AddImage( mNotPresentIconTexture.ImGuiHandle, iconPos, iconPos + iconSize );
 					}
@@ -629,16 +636,16 @@ namespace ReadyCheckHelper
 			}
 		}
 
-		unsafe protected void DrawOnAllianceList( int listIndex, MemoryHandler.ReadyCheckStateEnum readyCheckState, AtkUnitBase* pAllianceList, ImDrawListPtr drawList )
+		unsafe protected void DrawOnAllianceList( int listIndex, ReadyCheckState readyCheckState, AtkUnitBase* pAllianceList, ImDrawListPtr drawList )
 		{
 			if( listIndex < 0 || listIndex > 7 ) return;
 			int partyMemberNodeIndex = 9 - listIndex;
 			int iconNodeIndex = 5;
 
-			var pAllianceMemberNode = pAllianceList->UldManager.NodeListSize > partyMemberNodeIndex ? (AtkComponentNode*) pAllianceList->UldManager.NodeList[partyMemberNodeIndex] : (AtkComponentNode*) IntPtr.Zero;
+			var pAllianceMemberNode = pAllianceList->UldManager.NodeListCount > partyMemberNodeIndex ? (AtkComponentNode*) pAllianceList->UldManager.NodeList[partyMemberNodeIndex] : (AtkComponentNode*) IntPtr.Zero;
 			if( (IntPtr)pAllianceMemberNode != IntPtr.Zero )
 			{
-				var pIconNode = pAllianceMemberNode->Component->UldManager.NodeListSize > iconNodeIndex ? pAllianceMemberNode->Component->UldManager.NodeList[iconNodeIndex] : (AtkResNode*) IntPtr.Zero;
+				var pIconNode = pAllianceMemberNode->Component->UldManager.NodeListCount > iconNodeIndex ? pAllianceMemberNode->Component->UldManager.NodeList[iconNodeIndex] : (AtkResNode*) IntPtr.Zero;
 				if( (IntPtr)pIconNode != IntPtr.Zero )
 				{
 					Vector2 iconOffset = ( new Vector2( 0, 0 ) + mConfiguration.AllianceListIconOffset ) * pAllianceList->Scale;
@@ -647,15 +654,15 @@ namespace ReadyCheckHelper
 													pAllianceList->Y + pAllianceMemberNode->AtkResNode.Y * pAllianceList->Scale + pIconNode->Y * pAllianceList->Scale + pIconNode->Height * pAllianceList->Scale / 2 );
 					iconPos += iconOffset;
 
-					if( readyCheckState == MemoryHandler.ReadyCheckStateEnum.NotReady )
+					if( readyCheckState == ReadyCheckState.NotReady )
 					{
 						drawList.AddImage( mReadyCheckIconTexture.ImGuiHandle, iconPos, iconPos + iconSize, new Vector2( 0.5f, 0.0f ), new Vector2( 1.0f ) );
 					}
-					else if( readyCheckState == MemoryHandler.ReadyCheckStateEnum.Ready )
+					else if( readyCheckState == ReadyCheckState.Ready )
 					{
 						drawList.AddImage( mReadyCheckIconTexture.ImGuiHandle, iconPos, iconPos + iconSize, new Vector2( 0.0f ), new Vector2( 0.5f, 1.0f ) );
 					}
-					else if( readyCheckState == MemoryHandler.ReadyCheckStateEnum.CrossWorldMemberNotPresent )
+					else if( readyCheckState == ReadyCheckState.CrossWorldMemberNotPresent )
 					{
 						drawList.AddImage( mNotPresentIconTexture.ImGuiHandle, iconPos, iconPos + iconSize );
 					}
@@ -663,7 +670,7 @@ namespace ReadyCheckHelper
 			}
 		}
 
-		unsafe protected void DrawOnCrossWorldAllianceList( int allianceIndex, int partyMemberIndex, MemoryHandler.ReadyCheckStateEnum readyCheckState, AtkUnitBase* pAllianceList, ImDrawListPtr drawList )
+		unsafe protected void DrawOnCrossWorldAllianceList( int allianceIndex, int partyMemberIndex, ReadyCheckState readyCheckState, AtkUnitBase* pAllianceList, ImDrawListPtr drawList )
 		{
 			if( allianceIndex < 1 || allianceIndex > 5 ) return;
 			if( partyMemberIndex < 0 || partyMemberIndex > 7 ) return;
@@ -672,13 +679,13 @@ namespace ReadyCheckHelper
 			int iconNodeIndex = 2;
 
 			//***** TODO: This *occasionally* crashes, and I don't understand why.  Best guess is that the node list is not populated all at once, but grows as the addon is created.*****
-			var pAllianceNode = pAllianceList->UldManager.NodeListSize > allianceNodeIndex ? (AtkComponentNode*) pAllianceList->UldManager.NodeList[allianceNodeIndex] : (AtkComponentNode*) IntPtr.Zero;
+			var pAllianceNode = pAllianceList->UldManager.NodeListCount > allianceNodeIndex ? (AtkComponentNode*) pAllianceList->UldManager.NodeList[allianceNodeIndex] : (AtkComponentNode*) IntPtr.Zero;
 			if( (IntPtr)pAllianceNode != IntPtr.Zero )
 			{
-				var pPartyMemberNode = pAllianceNode->Component->UldManager.NodeListSize > partyMemberNodeIndex ? (AtkComponentNode*) pAllianceNode->Component->UldManager.NodeList[partyMemberNodeIndex] : (AtkComponentNode*) IntPtr.Zero;
+				var pPartyMemberNode = pAllianceNode->Component->UldManager.NodeListCount > partyMemberNodeIndex ? (AtkComponentNode*) pAllianceNode->Component->UldManager.NodeList[partyMemberNodeIndex] : (AtkComponentNode*) IntPtr.Zero;
 				if( (IntPtr)pPartyMemberNode != IntPtr.Zero )
 				{
-					var pIconNode = pPartyMemberNode->Component->UldManager.NodeListSize > iconNodeIndex ? pPartyMemberNode->Component->UldManager.NodeList[iconNodeIndex] : (AtkResNode*) IntPtr.Zero;
+					var pIconNode = pPartyMemberNode->Component->UldManager.NodeListCount > iconNodeIndex ? pPartyMemberNode->Component->UldManager.NodeList[iconNodeIndex] : (AtkResNode*) IntPtr.Zero;
 					if( (IntPtr)pIconNode != IntPtr.Zero )
 					{
 						Vector2 iconOffset = ( new Vector2( 0, 0 ) + mConfiguration.CrossWorldAllianceListIconOffset ) * pAllianceList->Scale;
@@ -687,20 +694,105 @@ namespace ReadyCheckHelper
 														pAllianceList->Y + pAllianceNode->AtkResNode.Y * pAllianceList->Scale + pPartyMemberNode->AtkResNode.Y * pAllianceList->Scale + pIconNode->Y * pAllianceList->Scale + pIconNode->Height * pAllianceList->Scale / 2 );
 						iconPos += iconOffset;
 
-						if( readyCheckState == MemoryHandler.ReadyCheckStateEnum.NotReady )
+						if( readyCheckState == ReadyCheckState.NotReady )
 						{
 							drawList.AddImage( mReadyCheckIconTexture.ImGuiHandle, iconPos, iconPos + iconSize, new Vector2( 0.5f, 0.0f ), new Vector2( 1.0f ) );
 						}
-						else if( readyCheckState == MemoryHandler.ReadyCheckStateEnum.Ready )
+						else if( readyCheckState == ReadyCheckState.Ready )
 						{
 							drawList.AddImage( mReadyCheckIconTexture.ImGuiHandle, iconPos, iconPos + iconSize, new Vector2( 0.0f, 0.0f ), new Vector2( 0.5f, 1.0f ) );
 						}
-						else if( readyCheckState == MemoryHandler.ReadyCheckStateEnum.CrossWorldMemberNotPresent )
+						else if( readyCheckState == ReadyCheckState.CrossWorldMemberNotPresent )
 						{
 							drawList.AddImage( mNotPresentIconTexture.ImGuiHandle, iconPos, iconPos + iconSize );
 						}
 					}
 				}
+			}
+		}
+
+		protected unsafe void UpdateReadyCheckImageNode( GameAddonEnum addon, uint memberIndex, ReadyCheckState readyCheckState )
+		{
+			AtkImageNode* pNode = null;
+			AtkResNode* pParentNode = null;
+			AtkUnitBase* pAddon = null;
+
+			if( addon == GameAddonEnum.PartyList )
+			{
+				if( memberIndex > 7 )
+				{
+					PluginLog.LogDebug( $"Error updating party list ready check node: Member Index {memberIndex} is invalid." );
+					return;
+				}
+				pAddon = (AtkUnitBase*)mGameGui.GetAddonByName( "_PartyList", 1 );
+
+				uint partyMemberNodeIndex = 22 - memberIndex;
+				const int resNodeIndex = 1;
+
+				var pPartyMemberNode = pAddon->UldManager.NodeListCount > partyMemberNodeIndex ? pAddon->UldManager.NodeList[partyMemberNodeIndex] : null;
+				if( pPartyMemberNode != null )
+				{
+					AtkComponentNode* pPartyMemberNodeAsComponentNode = pPartyMemberNode->GetAsAtkComponentNode();
+					pParentNode = pPartyMemberNodeAsComponentNode != null ? pPartyMemberNode : null;
+					//pParentNode = pPartyMemberNodeAsComponentNode != null && pPartyMemberNodeAsComponentNode->Component->UldManager.NodeListCount > resNodeIndex ? pPartyMemberNodeAsComponentNode->Component->UldManager.NodeList[resNodeIndex] : null;
+					if( pParentNode != null )
+					{
+						//	Get what we need from the icon node for proper image alignment/scale.
+						/*var pIconNode = pPartyMemberNode->Component->UldManager.NodeListCount > iconNodeIndex ? pPartyMemberNode->Component->UldManager.NodeList[iconNodeIndex] : null;
+						if( pIconNode != null )
+						{
+						}*/
+
+						//	Find our node by ID.  Doing this allows us to not have to deal with freeing the node resources and removing connections to sibling nodes (we'll still leak, but only once).
+						//pNode = AtkNodeHelpers.GetImageNodeByID( pParentNode, mReadyCheckPartyListNodeID );
+						pNode = AtkNodeHelpers.GetImageNodeByIDFromComponent( pPartyMemberNodeAsComponentNode->Component, mReadyCheckPartyListNodeID );
+
+						if( pNode != null )
+						{
+							pNode->AtkResNode.ToggleVisibility( readyCheckState is ReadyCheckState.Ready or ReadyCheckState.NotReady );
+							pNode->PartId = (ushort)( readyCheckState == ReadyCheckState.Ready ? 0 : 1 );
+							pNode->AtkResNode.SetPositionFloat( mConfiguration.PartyListIconOffset.X, mConfiguration.PartyListIconOffset.Y );
+							pNode->AtkResNode.SetScale( mConfiguration.PartyListIconScale, mConfiguration.PartyListIconScale );
+						}
+						else
+						{
+							//pNode = AtkNodeHelpers.CreateNewImageNode( pPartyMemberNode->Component, mReadyCheckPartyListNodeID, pParentNode );
+							var partList = new List<AtkUldPart>();
+							partList.Add( new() { U = 0, V = 0, Width = 48, Height = 48 } );
+							partList.Add( new() { U = 48, V = 48, Width = 48, Height = 48 } );
+							var pNewNode = AtkNodeHelpers.CreateOrphanImageNode( mReadyCheckPartyListNodeID, partList );
+							//if( pNewNode != null ) AtkNodeHelpers.AttachImageNode( pPartyMemberNodeAsComponentNode->Component, pNewNode, pParentNode );
+							if( pNewNode != null ) AtkNodeHelpers.AppendImageNodeToComponent( pPartyMemberNodeAsComponentNode->Component, pNewNode, pPartyMemberNodeAsComponentNode );
+						}
+					}
+				}
+			}
+			else if( addon == GameAddonEnum.AllianceList1 )
+			{
+				if( memberIndex > 7 )
+				{
+					PluginLog.LogDebug( $"Error updating alliance list 1 ready check node: Member Index {memberIndex} is invalid." );
+					return;
+				}
+				pAddon = (AtkUnitBase*)mGameGui.GetAddonByName( "_AllianceList1", 1 );
+			}
+			else if( addon == GameAddonEnum.AllianceList2 )
+			{
+				if( memberIndex > 7 )
+				{
+					PluginLog.LogDebug( $"Error updating alliance list 2 ready check node: Member Index {memberIndex} is invalid." );
+					return;
+				}
+				pAddon = (AtkUnitBase*)mGameGui.GetAddonByName( "_AllianceList2", 1 );
+			}
+			else if( addon == GameAddonEnum.CrossWorldAllianceList )
+			{
+				if( memberIndex > 39 )
+				{
+					PluginLog.LogDebug( $"Error updating cross world alliance list ready check node: Member Index {memberIndex} is invalid." );
+					return;
+				}
+				pAddon = (AtkUnitBase*)mGameGui.GetAddonByName( "Alliance48", 1 );
 			}
 		}
 
@@ -781,5 +873,7 @@ namespace ReadyCheckHelper
 			get { return mDebugProcessedWindowVisible; }
 			set { mDebugProcessedWindowVisible = value; }
 		}
+
+		private static readonly uint mReadyCheckPartyListNodeID = 0x6C78B200;    //YOLO hoping for no collisions.
 	}
 }
