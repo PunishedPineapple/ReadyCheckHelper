@@ -46,7 +46,12 @@ namespace ReadyCheckHelper
 			mDataManager		= dataManager;
 
 			//	Configuration
-			mConfiguration = mPluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+			mConfiguration = mPluginInterface.GetPluginConfig() as Configuration;
+			if( mConfiguration == null )
+			{
+				mConfiguration = new Configuration();
+				mConfiguration.mUseImGuiForPartyAllianceIcons = false;	//	We want to default this to off for all new configurations.
+			}
 			mConfiguration.Initialize( mPluginInterface );
 			MemoryHandler.Init( mSigScanner );
 

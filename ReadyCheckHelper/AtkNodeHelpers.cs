@@ -8,7 +8,7 @@ namespace ReadyCheckHelper;
 
 internal static unsafe class AtkNodeHelpers
 {
-	internal static AtkImageNode* GetImageNodeByIDFromComponent( AtkComponentBase* pComponentBase, uint nodeID )
+	/*internal static AtkImageNode* GetImageNodeByIDFromComponent( AtkComponentBase* pComponentBase, uint nodeID )
 	{
 		if( pComponentBase != null )
 		{
@@ -20,38 +20,29 @@ internal static unsafe class AtkNodeHelpers
 		}
 
 		return null;
-	}
+	}*/
 
-	internal static AtkImageNode* GetImageNodeByID( AtkResNode* pParentNode, uint nodeID )
+	internal static AtkImageNode* GetImageNodeByID( AtkUnitBase* pAddon, uint nodeID )
 	{
-		if( pParentNode == null ) return null;
-		AtkResNode* pFoundNode = pParentNode->ChildNode;
-		while( pFoundNode != null )
+		if( pAddon == null ) return null;
+		for( var i = 0; i < pAddon->UldManager.NodeListCount; ++i )
 		{
-			if( pFoundNode->NodeID == nodeID )
+			if( pAddon->UldManager.NodeList[i] == null ) continue;
+			if( pAddon->UldManager.NodeList[i]->NodeID == nodeID )
 			{
-				return (AtkImageNode*)pFoundNode;
+				return (AtkImageNode*)pAddon->UldManager.NodeList[i];
 			}
-			pFoundNode = pFoundNode->PrevSiblingNode;
 		}
 		return null;
 	}
 
-	/*internal static AtkImageNode* CreateNewImageNode( AtkComponentBase* pComponentBase, uint nodeID, AtkResNode* pParentNode )
+	internal static void AttachImageNode( AtkUnitBase* pAddon, AtkImageNode* pNode )
 	{
-		if( pComponentBase == null ) return null;
-		var pNewNode = CreateOrphanImageNode( nodeID );
-		if( pNewNode != null ) AttachImageNode( pComponentBase, pNewNode, pParentNode );
-		return pNewNode;
-	}*/
-
-	internal static void AttachImageNode( AtkComponentBase* pComponentBase, AtkImageNode* pNode, AtkResNode* pParentNode )
-	{
-		if( pComponentBase == null ) return;
+		if( pAddon == null ) return;
 
 		if( pNode != null )
 		{
-			var lastNode = pParentNode;
+			var lastNode = pAddon->RootNode;
 			if( lastNode->ChildNode != null )
 			{
 				lastNode = lastNode->ChildNode;
@@ -61,7 +52,7 @@ internal static unsafe class AtkNodeHelpers
 				}
 
 				pNode->AtkResNode.NextSiblingNode = lastNode;
-				pNode->AtkResNode.ParentNode = pParentNode;
+				pNode->AtkResNode.ParentNode = pAddon->RootNode;
 				lastNode->PrevSiblingNode = (AtkResNode*)pNode;
 			}
 			else
@@ -70,11 +61,11 @@ internal static unsafe class AtkNodeHelpers
 				pNode->AtkResNode.ParentNode = lastNode;
 			}
 
-			pComponentBase->UldManager.UpdateDrawNodeList();
+			pAddon->UldManager.UpdateDrawNodeList();
 		}
 	}
 
-	internal static void AppendImageNodeToComponent( AtkComponentBase* pComponentBase, AtkImageNode* pNode, AtkComponentNode* pParentNode )
+	/*internal static void AppendImageNodeToComponent( AtkComponentBase* pComponentBase, AtkImageNode* pNode, AtkComponentNode* pParentNode )
 	{
 		if( pComponentBase == null ||
 			pNode == null ||
@@ -95,7 +86,7 @@ internal static unsafe class AtkNodeHelpers
 
 			pComponentBase->UldManager.UpdateDrawNodeList();
 		}
-	}
+	}*/
 
 	internal static AtkImageNode* CreateOrphanImageNode( uint nodeID, List<AtkUldPart> partInfo )
 	{
@@ -181,11 +172,11 @@ internal static unsafe class AtkNodeHelpers
 		return pNewNode;
 	}
 
-	/*internal static void HideNode( AtkUnitBase* pAddon, uint nodeID )
+	internal static void HideNode( AtkUnitBase* pAddon, uint nodeID )
 	{
 		var pNode = GetImageNodeByID( pAddon, nodeID );
 		if( pNode != null ) ( (AtkResNode*)pNode )->ToggleVisibility( false );
-	}*/
+	}
 
 	internal const ushort DefaultImageNodeWidth = 48;
 	internal const ushort DefaultImageNodeHeight = 48;

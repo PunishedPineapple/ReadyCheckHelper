@@ -44,6 +44,13 @@ namespace ReadyCheckHelper
 			set { mShowReadyCheckOnPartyAllianceList = value; }
 		}
 
+		public bool mUseImGuiForPartyAllianceIcons = true;
+		public bool UseImGuiForPartyAllianceIcons
+		{
+			get { return mUseImGuiForPartyAllianceIcons; }
+			set { mUseImGuiForPartyAllianceIcons = value; }
+		}
+
 		public bool mClearReadyCheckOverlayEnteringInstance = true;
 		public bool ClearReadyCheckOverlayEnteringInstance
 		{
