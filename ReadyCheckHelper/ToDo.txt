@@ -1,9 +1,12 @@
 ﻿Maybe:
 -Check food durations for synced Extremes, Savages, and Ultimates when ready checking.
 -Add an alternate drawing mode that uses in-game UI elements for drawing on party list.
+-Flash game in taskbar on someone initiating a ready check?
 
 
 Bugs:
+- Major: Party list overlay icons don't track player; they only track slot at time of ready check for cross-world parties.
+	-Should be fixed already?  Double check.
 -In crossworld party, CID in the ready check data becomes zero if a person DCs, making the existing logic not work in that case.  Maybe cache the IDs at the start of a ready check?
 	-This was only observed once, and in passing, so may have been misunderstood.  Keep an eye out for it.
 
@@ -27,3 +30,4 @@ Priority:
 
 	Misc:
 		-Figure out if/how we can show the game's ready check window from the text link.
+		-Option to suppress the ready check window popping up when initiating the ready check.

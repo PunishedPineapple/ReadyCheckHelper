@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Dalamud.Logging;
 
 using FFXIVClientStructs.FFXIV.Client.System.Memory;
@@ -88,7 +89,7 @@ internal static unsafe class AtkNodeHelpers
 		}
 	}*/
 
-	internal static AtkImageNode* CreateOrphanImageNode( uint nodeID, List<AtkUldPart> partInfo )
+	internal static AtkImageNode* CreateOrphanImageNode( uint nodeID, List<AtkUldPart> partInfo, GameAddonEnum addon )
 	{
 		if( partInfo == null || partInfo.Count < 1 )
 		{
@@ -113,6 +114,21 @@ internal static unsafe class AtkNodeHelpers
 			pNewNode->AtkResNode.SetWidth( DefaultImageNodeWidth );
 			pNewNode->AtkResNode.SetHeight( DefaultImageNodeHeight );
 
+			//***** TODO:	The game uses the same parts list, parts, and assets for all nodes that do the same thing (i.e., all checkmark nodes in the item
+			//				search window are the same, all checkmarks in the card selling window are the same, etc.).  The main thing stopping us from doing
+			//				that is that I don't know whether these parts list get destroyed if the UI cleans up a node, and if so, how to know to make new
+			//				ones, so right now it seems safer to make parts lists, etc. for each node.  The game seems to do some synchronization/consolidation
+			//				of parts lists with the same ID anyway, so hopefully it's not a problem.
+
+			UInt32 partsListID = addon switch
+			{
+				GameAddonEnum.PartyList => PartyPartListID,
+				GameAddonEnum.AllianceList1 => Alliance1PartListID,
+				GameAddonEnum.AllianceList2 => Alliance2PartListID,
+				GameAddonEnum.CrossWorldAllianceList => CrossWorldAlliancePartListID,
+				_ => throw( new Exception( "Invalid addon specified while determining parts list ID." ) ),
+			};
+
 			var pPartsList = (AtkUldPartsList*)IMemorySpace.GetUISpace()->Malloc( (ulong)sizeof(AtkUldPartsList), 8 );
 			if( pPartsList == null )
 			{
@@ -120,7 +136,7 @@ internal static unsafe class AtkNodeHelpers
 				pNewNode->AtkResNode.Destroy( true );
 				return null;
 			}
-			pPartsList->Id = 0;
+			pPartsList->Id = partsListID;
 			pPartsList->PartCount = (uint)partInfo.Count;
 
 			var pParts = (AtkUldPart*)IMemorySpace.GetUISpace()->Malloc( (ulong)sizeof(AtkUldPart) * (ulong)partInfo.Count, 8 );
@@ -153,13 +169,14 @@ internal static unsafe class AtkNodeHelpers
 			}
 			for( int i = 0; i < partInfo.Count; ++i )
 			{
-				pAsset->Id = 0;
+				pAsset->Id = 0xCA45C0;	//	I have no idea for what this ID is used.  Keep it something out of the way I guess.
 				pAsset->AtkTexture.Ctor();
 				pParts[i].UldAsset = pAsset;
 			}
 
 			pNewNode->PartsList = pPartsList;
 
+			//***** TODO: Is it possible to have multiple textures loaded at the same time (different ones associated with different parts)?  This would be nice to add in a question mark and CD symbol as display options without reloading textures all the time.
 			pNewNode->PartId = 0;
 			pNewNode->LoadTexture( "ui/uld/ReadyCheck_hr1.tex" );
 
@@ -180,4 +197,9 @@ internal static unsafe class AtkNodeHelpers
 
 	internal const ushort DefaultImageNodeWidth = 48;
 	internal const ushort DefaultImageNodeHeight = 48;
+
+	internal const UInt32 PartyPartListID				= 0xB934C0;	//YOLO hoping for no collisions.
+	internal const UInt32 Alliance1PartListID			= 0xB934C1;
+	internal const UInt32 Alliance2PartListID			= 0xB934C2;
+	internal const UInt32 CrossWorldAlliancePartListID	= 0xB934C3;
 }

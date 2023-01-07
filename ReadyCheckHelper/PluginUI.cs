@@ -842,7 +842,7 @@ namespace ReadyCheckHelper
 						var partList = new List<AtkUldPart>();
 						partList.Add( new() { U = 0, V = 0, Width = 48, Height = 48 } );
 						partList.Add( new() { U = 48, V = 48, Width = 48, Height = 48 } );
-						var pNewNode = AtkNodeHelpers.CreateOrphanImageNode( nodeID, partList );
+						var pNewNode = AtkNodeHelpers.CreateOrphanImageNode( nodeID, partList, GameAddonEnum.PartyList );
 						if( pNewNode != null ) AtkNodeHelpers.AttachImageNode( pAddon, pNewNode );
 					}
 				}
@@ -954,6 +954,6 @@ namespace ReadyCheckHelper
 			set { mDebugProcessedWindowVisible = value; }
 		}
 
-		private static readonly uint mReadyCheckPartyListNodeIDBase = 0x6C78B200;    //YOLO hoping for no collisions.
+		private static readonly uint mReadyCheckPartyListNodeIDBase = 0x6C78B200;	//YOLO hoping for no collisions.  Can use the same ID base for each addon.
 	}
 }
