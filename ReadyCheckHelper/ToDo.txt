@@ -27,3 +27,5 @@ Priority:
 
 	Misc:
 		-Figure out if/how we can show the game's ready check window from the text link.
+		-Option to suppress the ready check window if you're the ready checker.
+		-Maybe an option to have names in the game's ready check window (and our ready check window and chat message) respect abbreviation/initial settings.
