@@ -1,10 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Dalamud.NET.SDK/12.0.2">
 	<PropertyGroup>
-		<TargetFramework>net8.0-windows</TargetFramework>
+		<TargetFramework>net9.0-windows</TargetFramework>
 		<Platforms>AnyCPU</Platforms>
-		<Version>1.0.7.7</Version>
+		<Version>1.0.8.0</Version>
 		<Authors>Infi, PunishedPineapple</Authors>
-		<Copyright>Copyright © Infi, PunishedPineapple 2021-2024</Copyright>
+		<Copyright>Copyright © Infi, PunishedPineapple 2021-2025</Copyright>
 		<PackageProjectUrl>https://github.com/Infiziert90/ReadyCheckHelper</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/Infiziert90/ReadyCheckHelper</RepositoryUrl>
 	</PropertyGroup>
@@ -32,44 +32,11 @@
 		<Content Include="Resources\**" DestinationFolder="Resources\$(RecursiveDir)" CopyToOutputDirectory="Always" />
 	</ItemGroup>
 
-	<ItemGroup>
-		<PackageReference Include="DalamudPackager" Version="11.0.0" />
-	</ItemGroup>
-
 	<PropertyGroup>
-		<DalamudLibPath>$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
 		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Reference Include="Dalamud">
-			<Private>false</Private>
-			<HintPath>$(DalamudLibPath)Dalamud.dll</HintPath>
-		</Reference>
-		<Reference Include="Newtonsoft.Json">
-			<Private>false</Private>
-			<HintPath>$(DalamudLibPath)Newtonsoft.Json.dll</HintPath>
-		</Reference>
-		<Reference Include="ImGui.NET">
-			<Private>false</Private>
-			<HintPath>$(DalamudLibPath)ImGui.NET.dll</HintPath>
-		</Reference>
-		<Reference Include="ImGuiScene">
-			<Private>false</Private>
-			<HintPath>$(DalamudLibPath)ImGuiScene.dll</HintPath>
-		</Reference>
-		<Reference Include="Lumina">
-			<Private>false</Private>
-			<HintPath>$(DalamudLibPath)Lumina.dll</HintPath>
-		</Reference>
-		<Reference Include="Lumina.Excel">
-			<Private>false</Private>
-			<HintPath>$(DalamudLibPath)Lumina.Excel.dll</HintPath>
-		</Reference>
-		<Reference Include="FFXIVClientStructs">
-			<Private>false</Private>
-			<HintPath>$(DalamudLibPath)FFXIVClientStructs.dll</HintPath>
-		</Reference>
 		<Reference Include="CheapLoc">
 			<Private>false</Private>
 			<HintPath>$(DalamudLibPath)CheapLoc.dll</HintPath>

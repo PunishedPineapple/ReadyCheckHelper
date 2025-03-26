@@ -169,7 +169,7 @@ public class DebugWindow : Window, IDisposable
         for (var i = 0; i < 8; ++i)
         {
             var partyMemberData = pAgentHUD->PartyMembers[i];
-            ImGui.Text($"Object Address: 0x{(nint)partyMemberData.Object:X}\r\nName Address: 0x{(nint)partyMemberData.Name:X}\r\nName: {MemoryHelper.ReadSeStringNullTerminated((nint)partyMemberData.Name)}\r\nCID: {partyMemberData.ContentId:X}\r\nOID: {partyMemberData.EntityId:X}");
+            ImGui.Text($"Object Address: 0x{(nint)partyMemberData.Object:X}\r\nName Address: 0x{(nint)partyMemberData.Name.Value:X}\r\nName: {partyMemberData.Name.ToString()}\r\nCID: {partyMemberData.ContentId:X}\r\nOID: {partyMemberData.EntityId:X}");
         }
 
         ImGui.Text("AgentHUD Raid Members:");
