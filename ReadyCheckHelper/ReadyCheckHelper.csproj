@@ -1,8 +1,8 @@
-﻿<Project Sdk="Dalamud.NET.Sdk/12.0.2">
+﻿<Project Sdk="Dalamud.NET.Sdk/13.0.0">
 	<PropertyGroup>
 		<TargetFramework>net9.0-windows</TargetFramework>
 		<Platforms>AnyCPU</Platforms>
-		<Version>1.0.8.0</Version>
+		<Version>1.0.9.0</Version>
 		<Authors>Infi, PunishedPineapple</Authors>
 		<Copyright>Copyright © Infi, PunishedPineapple 2021-2025</Copyright>
 		<PackageProjectUrl>https://github.com/Infiziert90/ReadyCheckHelper</PackageProjectUrl>

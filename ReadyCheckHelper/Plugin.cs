@@ -62,7 +62,7 @@ namespace ReadyCheckHelper
 
             //	Localization and Command Initialization
             OnLanguageChanged(PluginInterface.UiLanguage);
-            OpenReadyCheckWindowLink = PluginInterface.AddChatLinkHandler(1001, (i, m) => { ShowBestAvailableReadyCheckWindow(); });
+            OpenReadyCheckWindowLink = Chat.AddChatLinkHandler((i, m) => { ShowBestAvailableReadyCheckWindow(); });
             LocalizationHelpers.Init();
 
             //	UI Initialization
@@ -105,7 +105,7 @@ namespace ReadyCheckHelper
             PluginInterface.UiBuilder.Draw -= DrawUI;
             PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
             PluginInterface.LanguageChanged -= OnLanguageChanged;
-            PluginInterface.RemoveChatLinkHandler();
+            Chat.RemoveChatLinkHandler();
             CommandManager.RemoveHandler(TextCommandName);
 
             WindowSystem.RemoveAllWindows();
@@ -301,7 +301,7 @@ namespace ReadyCheckHelper
 
             //	We're only in a crossworld party if the cross realm proxy says we are; however, it can say we're cross-realm when
             //	we're in a regular party if we entered an instance as a cross-world party, so account for that too.
-            if (InfoProxyCrossRealm.Instance()->IsCrossRealm > 0 && GroupManager.Instance()->MainGroup.MemberCount < 1)
+            if (InfoProxyCrossRealm.Instance()->IsCrossRealm && GroupManager.Instance()->MainGroup.MemberCount < 1)
                 ProcessReadyCheckResults_CrossWorld();
             else
                 ProcessReadyCheckResults_Regular();
@@ -453,16 +453,7 @@ namespace ReadyCheckHelper
 
         private void ShowBestAvailableReadyCheckWindow()
         {
-            unsafe
-            {
-                var pReadyCheckNotification = (AtkUnitBase*)GameGui.GetAddonByName("_NotificationReadyCheck");
-                if (false /*(nint)pReadyCheckNotification != nint.Zero && pReadyCheckNotification->IsVisible*/)
-                {
-                    //***** TODO: Try to show built in ready check window.  The addon doesn't exist unless it's opened, so this might be difficult. *****
-                }
-
-                ResultWindow.IsOpen = true;
-            }
+            ResultWindow.IsOpen = true;
         }
 
         private void OnConditionChanged(ConditionFlag flag, bool value)

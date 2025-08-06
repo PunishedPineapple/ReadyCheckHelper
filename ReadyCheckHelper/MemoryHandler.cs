@@ -82,7 +82,7 @@ namespace ReadyCheckHelper
                         return new PartyListLayoutResult(false, i / 8 + 1, i % 8);
                 }
             }
-            else if (infoProxyCrossRealm->IsCrossRealm > 0)
+            else if (infoProxyCrossRealm->IsCrossRealm)
             {
                 var pGroupMember = InfoProxyCrossRealm.GetMemberByContentId(ContentId);
                 if (pGroupMember == null || ContentId == 0)

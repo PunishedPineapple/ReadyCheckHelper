@@ -6,7 +6,7 @@ using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using Lumina.Data.Files;
 
 namespace ReadyCheckHelper.Windows;
@@ -71,16 +71,16 @@ public class ResultWindow : Window, IDisposable
                             switch (tableList[j][i].ReadyState)
                             {
                                 case ReadyCheckStatus.Ready:
-                                    ImGui.Image(ReadyCheckIconTexture.ImGuiHandle, new Vector2(24), new Vector2(0.0f), new Vector2(0.5f, 1.0f));
+                                    ImGui.Image(ReadyCheckIconTexture.Handle, new Vector2(24), new Vector2(0.0f), new Vector2(0.5f, 1.0f));
                                     break;
                                 case ReadyCheckStatus.NotReady:
-                                    ImGui.Image(ReadyCheckIconTexture.ImGuiHandle, new Vector2(24), new Vector2(0.5f, 0.0f), new Vector2(1.0f));
+                                    ImGui.Image(ReadyCheckIconTexture.Handle, new Vector2(24), new Vector2(0.5f, 0.0f), new Vector2(1.0f));
                                     break;
                                 case ReadyCheckStatus.MemberNotPresent:
-                                    ImGui.Image(NotPresentIconTexture.ImGuiHandle, new Vector2(24));
+                                    ImGui.Image(NotPresentIconTexture.Handle, new Vector2(24));
                                     break;
                                 default:
-                                    ImGui.Image(UnknownStatusIconTexture.ImGuiHandle, new Vector2(24), new Vector2(0.0f), new Vector2(1.0f), new Vector4(0.0f));
+                                    ImGui.Image(UnknownStatusIconTexture.Handle, new Vector2(24), new Vector2(0.0f), new Vector2(1.0f), new Vector4(0.0f));
                                     break;
                             }
 

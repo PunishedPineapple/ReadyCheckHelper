@@ -1,6 +1,6 @@
 ﻿using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 
 namespace ReadyCheckHelper.Windows;
 
@@ -16,9 +16,8 @@ public static class Helper
         {
             using (ImRaii.Tooltip())
             {
-                ImGui.PushTextWrapPos(350.0f * ImGuiHelpers.GlobalScale);
-                ImGui.TextUnformatted(description);
-                ImGui.PopTextWrapPos();
+                using (ImRaii.TextWrapPos(350.0f * ImGuiHelpers.GlobalScale))
+                    ImGui.TextUnformatted(description);
             }
         }
     }
