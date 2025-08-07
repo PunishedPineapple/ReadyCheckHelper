@@ -62,7 +62,7 @@ namespace ReadyCheckHelper
 
             //	Localization and Command Initialization
             OnLanguageChanged(PluginInterface.UiLanguage);
-            OpenReadyCheckWindowLink = Chat.AddChatLinkHandler((i, m) => { ShowBestAvailableReadyCheckWindow(); });
+            OpenReadyCheckWindowLink = Chat.AddChatLinkHandler(1001, (i, m) => { ShowBestAvailableReadyCheckWindow(); });
             LocalizationHelpers.Init();
 
             //	UI Initialization
