@@ -17,7 +17,6 @@ using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.Sheets;
 using ReadyCheckHelper.Windows;
 
@@ -36,6 +35,7 @@ namespace ReadyCheckHelper
         [PluginService] public static ITextureProvider Texture { get; private set; } = null!;
         [PluginService] public static IGameInteropProvider Hook { get; private set; } = null!;
         [PluginService] public static IPluginLog Log { get; private set; } = null!;
+        [PluginService] public static IObjectTable ObjectTable { get; private set; } = null!;
 
         private const string TextCommandName = "/pready";
         private readonly DalamudLinkPayload OpenReadyCheckWindowLink;
@@ -344,7 +344,7 @@ namespace ReadyCheckHelper
                             var name = Utils.NameToSeString(pFoundPartyMember->Name).ExtractText();
 
                             //	If it's us, we need to use the first entry in the ready check data.
-                            if (pFoundPartyMember->EntityId == ClientState.LocalPlayer?.EntityId)
+                            if (pFoundPartyMember->EntityId == ObjectTable.LocalPlayer?.EntityId)
                             {
                                 readyCheckProcessedList.Insert(0, new CorrelatedReadyCheckEntry(name, (ulong)pFoundPartyMember->ContentId, pFoundPartyMember->EntityId, readyCheckData[0].Status, 0, 0));
                                 foundSelf = true;

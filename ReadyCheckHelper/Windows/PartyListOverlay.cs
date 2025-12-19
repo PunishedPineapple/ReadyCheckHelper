@@ -6,6 +6,7 @@ using Dalamud.Interface.Windowing;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Dalamud.Bindings.ImGui;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Data.Files;
 
 namespace ReadyCheckHelper.Windows;
@@ -131,7 +132,7 @@ public class PartyListOverlay : Window, IDisposable
         if (index is < 0 or > 7)
             return;
 
-        if ((nint)pPartyList == nint.Zero || !pPartyList->IsVisible)
+        if ((nint)pPartyList == nint.Zero || !IsActuallyVisible(pPartyList->AtkUnitBase))
             return;
 
         var partyMember = pPartyList->PartyMembers[index];
@@ -158,7 +159,7 @@ public class PartyListOverlay : Window, IDisposable
         if (index is < 0 or > 7)
             return;
 
-        if ((nint)pAllianceList == nint.Zero || !pAllianceList->IsVisible)
+        if ((nint)pAllianceList == nint.Zero || !IsActuallyVisible(pAllianceList->AtkUnitBase))
             return;
 
         var allianceMember = pAllianceList->AllianceMembers[index];
@@ -186,7 +187,7 @@ public class PartyListOverlay : Window, IDisposable
         if (partyMemberIndex is < 0 or > 7)
             return;
 
-        if ((nint)pAllianceList == nint.Zero || !pAllianceList->IsVisible)
+        if ((nint)pAllianceList == nint.Zero || !IsActuallyVisible(pAllianceList->AtkUnitBase))
             return;
 
         var alliance = pAllianceList->Alliances[allianceIndex-1]; // Group 1 is not in the span, so we need to subtract 1 group from this
@@ -216,5 +217,19 @@ public class PartyListOverlay : Window, IDisposable
     public void InvalidateReadyCheck()
     {
         ReadyCheckValid = false;
+    }
+
+    public static unsafe bool IsActuallyVisible(AtkUnitBase addon)
+    {
+        if (!addon.IsVisible)
+            return false;
+        if (addon.RootNode is null)
+            return false;
+        if (!addon.RootNode->IsVisible())
+            return false;
+        if ((addon.VisibilityFlags & 5) is not 0)
+            return false;
+
+        return true;
     }
 }

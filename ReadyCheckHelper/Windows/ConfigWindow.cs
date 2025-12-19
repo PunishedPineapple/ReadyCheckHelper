@@ -3,7 +3,6 @@ using CheapLoc;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
-using Dalamud.Bindings.ImGui;
 
 namespace ReadyCheckHelper.Windows;
 
