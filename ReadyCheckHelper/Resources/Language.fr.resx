@@ -1,0 +1,92 @@
+<root>
+    <resheader name="resmimetype">
+        <value>text/microsoft-resx</value>
+    </resheader>
+    <resheader name="version">
+        <value>1.3</value>
+    </resheader>
+    <resheader name="reader">
+        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <resheader name="writer">
+        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <data name="BasicHelpMessage" xml:space="preserve">
+        <value>Ce plugin fonctionne automatiquement ; cependant, certaines commandes textuelles sont prises en charge. Les sous-commandes valides sont {0}, {1} et {2}. Utilisez \"{3} &lt;subcommand&gt;\" pour plus d'informations sur chaque sous-commande.</value>
+    </data>
+    <data name="DebugSubcommandHelpMessage" xml:space="preserve">
+        <value>Ouvre une fenêtre de débug contenant les données de l'appel de préparation et de l'équipe.</value>
+    </data>
+    <data name="ClearSubcommandHelpMessage" xml:space="preserve">
+        <value>Supprime les icônes de vérification les plus récentes des listes d'équipe et d'alliance.</value>
+    </data>
+    <data name="ResultsSubcommandHelpMessage" xml:space="preserve">
+        <value>Ouvre une fenêtre contenant les résultats du dernier appel de préparation s'étant produit.</value>
+    </data>
+    <data name="ConfigSubcommandHelpMessage" xml:space="preserve">
+        <value>Ouvre la fenêtre des paramètres.</value>
+    </data>
+    <data name="PluginTextCommandDescription" xml:space="preserve">
+        <value>Utilisez {0} pour ouvrir la fenêtre de configuration.</value>
+    </data>
+    <data name="WindowTitleConfig" xml:space="preserve">
+        <value>Paramètres de Ready Check Helper</value>
+    </data>
+    <data name="ConfigOptionPrintNamesofUnreadyinChat" xml:space="preserve">
+        <value>Afficher les noms de ceux qui ne sont pas prêts dans la fenêtre de discussion.</value>
+    </data>
+    <data name="ConfigOptionMaxNamesinChat" xml:space="preserve">
+        <value>Nombre maximum de noms à afficher dans le chat :</value>
+    </data>
+    <data name="HelpChatMessageChannel" xml:space="preserve">
+        <value>Définit le canal de discussion dans lequel le message sera affiché dans le chat. Laissez cette option sur sa valeur par défaut ({0}) à moins que cela ne cause des soucis avec votre configuration de chat. Cela n'affecte que les messages à propos des joueurs qui ne sont pas prêts ; tous les autres messages de ce plugin respectent le canal de discussion par défaut que vous avez sélectionné dans les paramètres de Dalamud.</value>
+    </data>
+    <data name="ConfigOptionChatMessageChannel" xml:space="preserve">
+        <value>Canal de Discussion :</value>
+    </data>
+    <data name="ConfigOptionClearPartyAllianceListSettings" xml:space="preserve">
+        <value>Retirer les symboles la liste d'équipe/d'alliance :</value>
+    </data>
+    <data name="ConfigOptionClearPartyAllianceListuponEnteringCombat" xml:space="preserve">
+        <value>En entrant en combat.</value>
+    </data>
+    <data name="ConfigOptionClearPartyAllianceListuponEnteringInstance" xml:space="preserve">
+        <value>En entrant dans une instance.</value>
+    </data>
+    <data name="ConfigOptionClearPartyAllianceListuponEnteringingCombatinInstance" xml:space="preserve">
+        <value>En entrant en combat en étant dans une instance.</value>
+    </data>
+    <data name="ConfigOptionClearPartyAllianceListafterXSeconds" xml:space="preserve">
+        <value>Après un certain nombre de secondes :</value>
+    </data>
+    <data name="HelpClearPartyAllianceListafterXSeconds" xml:space="preserve">
+        <value>Les modifications apportées à ce paramètre ne prendront effet qu'à la fin du prochain Appel de préparation.</value>
+    </data>
+    <data name="ButtonSaveandClose" xml:space="preserve">
+        <value>Enregistrer et Fermer</value>
+    </data>
+    <data name="ButtonClose" xml:space="preserve">
+        <value>Fermer</value>
+    </data>
+    <data name="WindowTitleReadyCheckResults" xml:space="preserve">
+        <value>Dernier Appel de préparation</value>
+    </data>
+    <data name="PlaceholderNoReadyCheckResultsExist" xml:space="preserve">
+        <value>Aucun Appel de préparation n'a encore été effectué.</value>
+    </data>
+    <data name="WindowTitleReadyCheckandAllianceDebugData" xml:space="preserve">
+        <value>Données de débug d'Appel de préparation et d'Alliance</value>
+    </data>
+    <data name="HelpDebugSetObjectAddressWarning" xml:space="preserve">
+        <value>NE TOUCHEZ PAS À CECI À MOINS QUE VOUS NE SACHIEZ EXACTEMENT CE QUE VOUS FAITES ET POURQUOI ; LE MEILLEUR CAS POSSIBLE EST UN CRASH DU PLUGIN.</value>
+    </data>
+    <data name="WindowTitleRawReadyCheckData" xml:space="preserve">
+        <value>Débug : Données brutes de l'appel de préparation</value>
+    </data>
+    <data name="WindowTitleProcessedReadyCheckData" xml:space="preserve">
+        <value>Débug : Données traitées de l'appel de préparation</value>
+    </data>
+    <data name="ConfigOptionDrawonPartyAllianceLists" xml:space="preserve">
+        <value>Afficher un symbole de préparation sur la liste d'équipe/d'alliance.</value>
+    </data>
+</root>

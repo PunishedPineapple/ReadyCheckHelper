@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using CheapLoc;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
@@ -11,7 +10,9 @@ using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility;
 using Lumina.Excel.Sheets;
+using ReadyCheckHelper.Resources;
 
 namespace ReadyCheckHelper.Windows;
 
@@ -25,18 +26,18 @@ public class DebugWindow : Window, IDisposable
     private bool AllowCrossWorldAllianceDrawing;
     private int NumNamesToTestChatMessage = 5;
 
-    public DebugWindow(Plugin plugin) : base($"{Loc.Localize("Window Title: Ready Check and Alliance Debug Data", "Ready Check and Alliance Debug Data")}###Ready Check and Alliance Debug Data")
+    public DebugWindow(Plugin plugin) : base($"{Language.WindowTitleReadyCheckandAllianceDebugData}###Ready Check and Alliance Debug Data")
     {
         Plugin = plugin;
 
-        var classJobSheet = Plugin.DataManager.GetExcelSheet<ClassJob>()!;
-        foreach(var job in classJobSheet.ToList())
-            JobDict.Add(job.RowId, job.Abbreviation.ExtractText());
+        var classJobSheet = Plugin.DataManager.GetExcelSheet<ClassJob>();
+        foreach(var job in classJobSheet)
+            JobDict.Add(job.RowId, job.Abbreviation.ToString());
 
-        SizeConstraints = new WindowSizeConstraints()
+        SizeConstraints = new WindowSizeConstraints
         {
             MinimumSize = new Vector2(375, 340),
-            MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
+            MaximumSize = new Vector2(float.MaxValue, float.MaxValue),
         };
 
         RespectCloseHotkey = false;
@@ -80,9 +81,7 @@ public class DebugWindow : Window, IDisposable
             ImGui.Text($"Number of Party Members (Group {i}): {InfoProxyCrossRealm.GetGroupMemberCount(i)}");
 
         ImGui.Text($"Ready check is active: {Plugin.ReadyCheckActive}");
-        ImGui.Spacing();
-        ImGui.Spacing();
-        ImGui.Spacing();
+        ImGuiHelpers.ScaledDummy(5.0f);
         ImGui.Text($"Hud Agent Address: 0x{new nint(pAgentHUD):X}");
 
         var isOpen = Plugin.ProcessedWindow.IsOpen;
@@ -96,14 +95,6 @@ public class DebugWindow : Window, IDisposable
             Plugin.ListUnreadyPlayersInChat([..LocalizationHelpers.TestNames.Take(NumNamesToTestChatMessage)]);
 
         ImGui.SliderInt("Number of Test Names", ref NumNamesToTestChatMessage, 1, LocalizationHelpers.TestNames.Length);
-
-        if (ImGui.Button("Export Localizable Strings"))
-        {
-            var pwd = Directory.GetCurrentDirectory();
-            Directory.SetCurrentDirectory(Plugin.PluginInterface.AssemblyLocation.DirectoryName!);
-            Loc.ExportLocalizable();
-            Directory.SetCurrentDirectory(pwd);
-        }
 
         ImGui.NextColumn();
         ImGui.Text("Ready Check Data:");
@@ -119,9 +110,9 @@ public class DebugWindow : Window, IDisposable
             var pGroupMember = groupManager->MainGroup.GetPartyMemberByIndex(i);
             if ((nint)pGroupMember != nint.Zero)
             {
-                var name = Utils.NameToSeString(pGroupMember->Name).ExtractText();
-                string classJobAbbr = JobDict.TryGetValue(pGroupMember->ClassJob, out classJobAbbr) ? classJobAbbr : "ERR";
-                ImGui.Text($"Job: {classJobAbbr}, OID: {pGroupMember->EntityId:X8}, CID: {pGroupMember->ContentId:X16}, Name: {name}");
+                var name = pGroupMember->NameString;
+                var abbr = JobDict.GetValueOrDefault(pGroupMember->ClassJob, "ERR");
+                ImGui.Text($"Job: {abbr}, OID: {pGroupMember->EntityId:X8}, CID: {pGroupMember->ContentId:X16}, Name: {name}");
             }
             else
             {
@@ -134,11 +125,9 @@ public class DebugWindow : Window, IDisposable
             var pGroupMember = groupManager->MainGroup.GetAllianceMemberByIndex(i);
             if ((nint)pGroupMember != nint.Zero)
             {
-                var name = Utils.NameToSeString(pGroupMember->Name).ExtractText();
-                string classJobAbbr = JobDict.TryGetValue(pGroupMember->ClassJob, out classJobAbbr)
-                    ? classJobAbbr
-                    : "ERR";
-                ImGui.Text($"Job: {classJobAbbr}, OID: {pGroupMember->EntityId:X8}, CID: {pGroupMember->ContentId:X16}, Name: {name}");
+                var name = pGroupMember->NameString;
+                var abbr = JobDict.GetValueOrDefault(pGroupMember->ClassJob, "ERR");
+                ImGui.Text($"Job: {abbr}, OID: {pGroupMember->EntityId:X8}, CID: {pGroupMember->ContentId:X16}, Name: {name}");
             }
             else
             {
@@ -155,7 +144,7 @@ public class DebugWindow : Window, IDisposable
                 var pGroupMember = InfoProxyCrossRealm.GetGroupMember((uint)j, i);
                 if ((nint)pGroupMember != nint.Zero)
                 {
-                    var name = Utils.NameToSeString(pGroupMember->Name).ExtractText();
+                    var name = pGroupMember->NameString;
                     ImGui.Text($"Group: {pGroupMember->GroupIndex}, OID: {pGroupMember->EntityId:X8}, CID: {pGroupMember->ContentId:X16}, Name: {name}");
                 }
             }

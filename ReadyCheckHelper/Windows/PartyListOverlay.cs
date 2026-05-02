@@ -25,15 +25,16 @@ public class PartyListOverlay : Window, IDisposable
         ReadyCheckIconTexture = Plugin.Texture.CreateFromTexFile(Plugin.DataManager.GetFile<TexFile>("ui/uld/ReadyCheck_hr1.tex")!);
         NotPresentIconTexture = Plugin.Texture.GetFromGameIcon(61504).RentAsync().Result;
 
-        SizeConstraints = new WindowSizeConstraints()
+        SizeConstraints = new WindowSizeConstraints
         {
             MinimumSize = new Vector2(180, 100),
-            MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
+            MaximumSize = new Vector2(float.MaxValue, float.MaxValue),
         };
 
         ForceMainWindow = true;
         RespectCloseHotkey = false;
         DisableWindowSounds = true;
+
         Flags = ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoMove |
                 ImGuiWindowFlags.NoMouseInputs | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoBackground |
                 ImGuiWindowFlags.NoNav;
@@ -92,12 +93,9 @@ public class PartyListOverlay : Window, IDisposable
         else
         {
             var data = Plugin.GetProcessedReadyCheckData();
-            if (data == null)
-                return;
-
             foreach (var result in data)
             {
-                var indices = MemoryHandler.GetHUDIndicesForChar(result.ContentId, result.EntityId);
+                var indices = Plugin.MemoryHandler.GetHUDIndicesForChar(result.ContentId, result.EntityId);
                 if (indices == null)
                     continue;
 

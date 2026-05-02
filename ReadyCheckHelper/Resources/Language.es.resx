@@ -1,0 +1,86 @@
+<root>
+    <resheader name="resmimetype">
+        <value>text/microsoft-resx</value>
+    </resheader>
+    <resheader name="version">
+        <value>1.3</value>
+    </resheader>
+    <resheader name="reader">
+        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <resheader name="writer">
+        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <data name="PluginTextCommandDescription" xml:space="preserve">
+        <value>Usa {0} para abrir la ventana de configuración.</value>
+    </data>
+    <data name="ClearSubcommandHelpMessage" xml:space="preserve">
+        <value>Elimina los iconos de verificación lista más recientes de las listas de grupo/alianza.</value>
+    </data>
+    <data name="ResultsSubcommandHelpMessage" xml:space="preserve">
+        <value>Abre una ventana que contiene los resultados de la última comprobación lista para ocurrir.</value>
+    </data>
+    <data name="ConfigSubcommandHelpMessage" xml:space="preserve">
+        <value>Abre la ventana de configuración.</value>
+    </data>
+    <data name="DebugSubcommandHelpMessage" xml:space="preserve">
+        <value>Abre una ventana de depuración que contiene el grupo y comprueba los datos de los objetos.</value>
+    </data>
+    <data name="BasicHelpMessage" xml:space="preserve">
+        <value>Este plug-in funciona automáticamente; sin embargo, algunos comandos de texto están soportados. Subcomandos válidos son {0}, {1} y {2}. Use \"{3} &lt;subcommand&gt;\" para más información en cada subcomando.</value>
+    </data>
+    <data name="WindowTitleConfig" xml:space="preserve">
+        <value>Ajustes de Ayuda de Comprobar Listo</value>
+    </data>
+    <data name="ConfigOptionPrintNamesofUnreadyinChat" xml:space="preserve">
+        <value>Mostrar los nombres de aquellos que no están listos en la ventana de chat.</value>
+    </data>
+    <data name="ConfigOptionMaxNamesinChat" xml:space="preserve">
+        <value>Número máximo de nombres a mostrar en el chat:</value>
+    </data>
+    <data name="ConfigOptionDrawonPartyAllianceLists" xml:space="preserve">
+        <value>Dibujar comprobación en las listas de partes/alianzas.</value>
+    </data>
+    <data name="ConfigOptionClearPartyAllianceListSettings" xml:space="preserve">
+        <value>Limpiar comprobación de lista de grupo/alianza:</value>
+    </data>
+    <data name="ConfigOptionClearPartyAllianceListuponEnteringCombat" xml:space="preserve">
+        <value>Al entrar en combate.</value>
+    </data>
+    <data name="ConfigOptionClearPartyAllianceListuponEnteringInstance" xml:space="preserve">
+        <value>Al ingresar la instancia.</value>
+    </data>
+    <data name="ConfigOptionClearPartyAllianceListuponEnteringingCombatinInstance" xml:space="preserve">
+        <value>Al entrar en combate en la instancia.</value>
+    </data>
+    <data name="ConfigOptionClearPartyAllianceListafterXSeconds" xml:space="preserve">
+        <value>Después de un cierto número de segundos:</value>
+    </data>
+    <data name="HelpClearPartyAllianceListafterXSeconds" xml:space="preserve">
+        <value>Los cambios en este ajuste no surtirán efecto hasta que concluya la próxima comprobación.</value>
+    </data>
+    <data name="ButtonSaveandClose" xml:space="preserve">
+        <value>Guardar y cerrar</value>
+    </data>
+    <data name="ButtonClose" xml:space="preserve">
+        <value>Cerrar</value>
+    </data>
+    <data name="WindowTitleReadyCheckResults" xml:space="preserve">
+        <value>Últimos resultados de la comprobación</value>
+    </data>
+    <data name="PlaceholderNoReadyCheckResultsExist" xml:space="preserve">
+        <value>Aún no se ha realizado ninguna comprobación.</value>
+    </data>
+    <data name="WindowTitleReadyCheckandAllianceDebugData" xml:space="preserve">
+        <value>Realizar comprobación y datos de depuración de alianza</value>
+    </data>
+    <data name="HelpDebugSetObjectAddressWarning" xml:space="preserve">
+        <value>NO TOQUES ESTO!! A MENOS DE QUE CONOZCAS QUE ESTAS HACIENDO Y PORQUE.</value>
+    </data>
+    <data name="WindowTitleRawReadyCheckData" xml:space="preserve">
+        <value>Depuración: Datos de Comprobación Listo</value>
+    </data>
+    <data name="WindowTitleProcessedReadyCheckData" xml:space="preserve">
+        <value>Depuración: Datos de verificación procesados</value>
+    </data>
+</root>

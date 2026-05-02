@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
-using CheapLoc;
 using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility;
 using Lumina.Data.Files;
+using ReadyCheckHelper.Resources;
 
 namespace ReadyCheckHelper.Windows;
 
@@ -19,17 +20,17 @@ public class ResultWindow : Window, IDisposable
     private readonly IDalamudTextureWrap UnknownStatusIconTexture;
     private readonly IDalamudTextureWrap NotPresentIconTexture;
 
-    public ResultWindow(Plugin plugin) : base($"{Loc.Localize("Window Title: Ready Check Results", "Latest Ready Check Results")}###Latest Ready Check Results")
+    public ResultWindow(Plugin plugin) : base($"{Language.WindowTitleReadyCheckResults}###Latest Ready Check Results")
     {
         Plugin = plugin;
         ReadyCheckIconTexture = Plugin.Texture.CreateFromTexFile(Plugin.DataManager.GetFile<TexFile>("ui/uld/ReadyCheck_hr1.tex")!);
         UnknownStatusIconTexture = Plugin.Texture.GetFromGameIcon(60072).RentAsync().Result;
         NotPresentIconTexture = Plugin.Texture.GetFromGameIcon(61504).RentAsync().Result;
 
-        SizeConstraints = new WindowSizeConstraints()
+        SizeConstraints = new WindowSizeConstraints
         {
             MinimumSize = new Vector2(180, 100),
-            MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
+            MaximumSize = new Vector2(float.MaxValue, float.MaxValue),
         };
 
         RespectCloseHotkey = false;
@@ -44,7 +45,7 @@ public class ResultWindow : Window, IDisposable
     public override void Draw()
     {
         var list = Plugin.GetProcessedReadyCheckData();
-        if (list != null)
+        if (list.Count > 0)
         {
             //	We have to sort and reorganize this yet again because of how ImGui tables work ;_;
             list.Sort((a, b) => a.GroupIndex.CompareTo(b.GroupIndex));
@@ -97,16 +98,12 @@ public class ResultWindow : Window, IDisposable
         }
         else
         {
-            ImGui.Text(Loc.Localize("Placeholder: No Ready Check Results Exist", "No ready check has yet occurred."));
+            ImGui.Text(Language.PlaceholderNoReadyCheckResultsExist);
         }
 
-        ImGui.Spacing();
-        ImGui.Spacing();
-        ImGui.Spacing();
-        ImGui.Spacing();
-        ImGui.Spacing();
+        ImGuiHelpers.ScaledDummy(5.0f);
 
-        if (ImGui.Button($"{Loc.Localize("Button: Close", "Close")}###Close"))
+        if (ImGui.Button($"{Language.ButtonClose}###Close"))
             IsOpen = false;
     }
 }

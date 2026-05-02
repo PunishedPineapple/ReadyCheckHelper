@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
-using CheapLoc;
-using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Command;
 using Dalamud.Game.Text;
@@ -14,10 +12,12 @@ using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using Lumina.Excel.Sheets;
+using ReadyCheckHelper.Resources;
 using ReadyCheckHelper.Windows;
 
 namespace ReadyCheckHelper
@@ -50,20 +50,22 @@ namespace ReadyCheckHelper
         public PartyListOverlay PartyListOverlay { get; init; }
 
         private readonly List<uint> InstancedTerritories = [];
-        private List<CorrelatedReadyCheckEntry> ProcessedReadyCheckData;
-        private CancellationTokenSource TimedOverlayCancellationSource;
+        private List<CorrelatedReadyCheckEntry> ProcessedReadyCheckData = [];
+        private CancellationTokenSource TimedOverlayCancellationSource = new();
         public bool ReadyCheckActive { get; private set; }
+
+        public readonly MemoryHandler MemoryHandler;
 
         public Plugin()
         {
             //	Configuration
             Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-            MemoryHandler.Init();
 
             //	Localization and Command Initialization
-            OnLanguageChanged(PluginInterface.UiLanguage);
+            LanguageChanged(PluginInterface.UiLanguage);
             OpenReadyCheckWindowLink = Chat.AddChatLinkHandler(1001, (i, m) => { ShowBestAvailableReadyCheckWindow(); });
-            LocalizationHelpers.Init();
+
+            MemoryHandler = new MemoryHandler();
 
             //	UI Initialization
             ConfigWindow = new ConfigWindow(this);
@@ -84,7 +86,7 @@ namespace ReadyCheckHelper
             PopulateInstancedTerritoriesList();
 
             //	Event Subscription
-            PluginInterface.LanguageChanged += OnLanguageChanged;
+            PluginInterface.LanguageChanged += LanguageChanged;
             Condition.ConditionChange += OnConditionChanged;
             ClientState.TerritoryChanged += OnTerritoryChanged;
             ClientState.Logout += OnLogout;
@@ -101,10 +103,12 @@ namespace ReadyCheckHelper
             ClientState.Logout -= OnLogout;
             ClientState.TerritoryChanged -= OnTerritoryChanged;
             Condition.ConditionChange -= OnConditionChanged;
-            MemoryHandler.Uninit();
+
+            MemoryHandler.Dispose();
+
             PluginInterface.UiBuilder.Draw -= DrawUI;
             PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
-            PluginInterface.LanguageChanged -= OnLanguageChanged;
+            PluginInterface.LanguageChanged -= LanguageChanged;
             Chat.RemoveChatLinkHandler();
             CommandManager.RemoveHandler(TextCommandName);
 
@@ -116,21 +120,12 @@ namespace ReadyCheckHelper
             PartyListOverlay.Dispose();
 
             InstancedTerritories.Clear();
-            LocalizationHelpers.Uninit();
-            TimedOverlayCancellationSource?.Dispose();
-            TimedOverlayCancellationSource = null;
+            TimedOverlayCancellationSource.Dispose();
         }
 
-        private void OnLanguageChanged(string langCode)
+        public void LanguageChanged(string langCode)
         {
-            var allowedLang = new List<string> { "es", "fr", "ja" };
-
-            Log.Information("Trying to set up Loc for culture {0}", langCode);
-
-            if (allowedLang.Contains(langCode))
-                Loc.Setup(File.ReadAllText(Path.Combine(PluginInterface.AssemblyLocation.DirectoryName!, @"Resources\Localization\", $"loc_{langCode}.json")));
-            else
-                Loc.SetupWithFallbacks();
+            Language.Culture = new CultureInfo(langCode);
 
             //	Set up the command handler with the current language.
             if (CommandManager.Commands.ContainsKey(TextCommandName))
@@ -138,7 +133,7 @@ namespace ReadyCheckHelper
 
             CommandManager.AddHandler(TextCommandName, new CommandInfo(ProcessTextCommand)
             {
-                HelpMessage = string.Format(Loc.Localize("Plugin Text Command Description", "Use {0} to open the the configuration window."), "\"/pready config\"")
+                HelpMessage = Language.PluginTextCommandDescription.Format("'pready config'"),
             });
         }
 
@@ -205,11 +200,11 @@ namespace ReadyCheckHelper
         {
             return args.ToLower() switch
             {
-                "config" => Loc.Localize("Config Subcommand Help Message", "Opens the settings window."),
-                "results" => Loc.Localize("Results Subcommand Help Message", "Opens a window containing the results of the last ready check to occur."),
-                "clear" => Loc.Localize("Clear Subcommand Help Message", "Removes the most recent ready check icons from the party/alliance lists."),
-                "debug" => Loc.Localize("Debug Subcommand Help Message", "Opens a debugging window containing party and ready check object data."),
-                _ => string.Format(Loc.Localize("Basic Help Message", "This plugin works automatically; however, some text commands are supported.  Valid subcommands are {0}, {1}, and {2}.  Use \"{3} <subcommand>\" for more information on each subcommand."), "\"config\"", "\"results\"", "\"clear\"", "/pready help")
+                "config" => Language.ConfigSubcommandHelpMessage,
+                "results" => Language.ResultsSubcommandHelpMessage,
+                "clear" => Language.ClearSubcommandHelpMessage,
+                "debug" => Language.DebugSubcommandHelpMessage,
+                _ => Language.BasicHelpMessage.Format("'config'", "'results'", "'clear'", "/pready help"),
             };
         }
 
@@ -229,7 +224,7 @@ namespace ReadyCheckHelper
                 ProcessReadyCheckResults();
         }
 
-        private void OnReadyCheckInitiated(object sender, EventArgs e)
+        private void OnReadyCheckInitiated(object? _, EventArgs __)
         {
             //	Shouldn't really be getting here if someone is logged out, but better safe than sorry.
             if (!ClientState.IsLoggedIn)
@@ -238,10 +233,10 @@ namespace ReadyCheckHelper
             //	Flag that we should start processing the data every frame.
             ReadyCheckActive = true;
             PartyListOverlay.ShowReadyCheckOverlay();
-            TimedOverlayCancellationSource?.Cancel();
+            TimedOverlayCancellationSource.Cancel();
         }
 
-        private void OnReadyCheckCompleted(object sender, EventArgs e)
+        private void OnReadyCheckCompleted(object? _, EventArgs __)
         {
             //	Shouldn't really be getting here if someone is logged out, but better safe than sorry.
             if (!ClientState.IsLoggedIn)
@@ -281,8 +276,7 @@ namespace ReadyCheckHelper
                     }
                     finally
                     {
-                        TimedOverlayCancellationSource?.Dispose();
-                        TimedOverlayCancellationSource = null;
+                        TimedOverlayCancellationSource.Dispose();
                     }
 
                     if (!ReadyCheckActive)
@@ -293,15 +287,17 @@ namespace ReadyCheckHelper
 
         private unsafe void ProcessReadyCheckResults()
         {
-            if ((nint)InfoProxyCrossRealm.Instance() == nint.Zero)
+            var infoProxy = InfoProxyCrossRealm.Instance();
+            var groupManager = GroupManager.Instance();
+            if ((nint)infoProxy == nint.Zero)
                 return;
 
-            if ((nint)GroupManager.Instance() == nint.Zero)
+            if ((nint)groupManager == nint.Zero)
                 return;
 
             //	We're only in a crossworld party if the cross realm proxy says we are; however, it can say we're cross-realm when
             //	we're in a regular party if we entered an instance as a cross-world party, so account for that too.
-            if (InfoProxyCrossRealm.Instance()->IsCrossRealm && GroupManager.Instance()->MainGroup.MemberCount < 1)
+            if (infoProxy->IsCrossRealm && !infoProxy->IsInAllianceRaid && groupManager->MainGroup.MemberCount < 1)
                 ProcessReadyCheckResults_CrossWorld();
             else
                 ProcessReadyCheckResults_Regular();
@@ -325,7 +321,7 @@ namespace ReadyCheckHelper
                         var pGroupMember = groupManager->MainGroup.GetAllianceMemberByGroupAndIndex(j, i);
                         if ((nint)pGroupMember != nint.Zero)
                         {
-                            var name = Utils.NameToSeString(pGroupMember->Name).ExtractText();
+                            var name = pGroupMember->NameString;
                             allianceMemberDict.TryAdd(pGroupMember->EntityId, Tuple.Create(pGroupMember->ContentId, name, (byte)(j + 1), (byte)i));
                         }
                     }
@@ -341,7 +337,7 @@ namespace ReadyCheckHelper
                         var pFoundPartyMember = groupManager->MainGroup.GetPartyMemberByIndex(i);
                         if ((nint)pFoundPartyMember != nint.Zero)
                         {
-                            var name = Utils.NameToSeString(pFoundPartyMember->Name).ExtractText();
+                            var name = pFoundPartyMember->NameString;
 
                             //	If it's us, we need to use the first entry in the ready check data.
                             if (pFoundPartyMember->EntityId == ObjectTable.LocalPlayer?.EntityId)
@@ -389,10 +385,15 @@ namespace ReadyCheckHelper
 
                 foreach (var readyCheckEntry in readyCheckData)
                 {
-                    var pFoundPartyMember = InfoProxyCrossRealm.GetMemberByContentId(readyCheckEntry.ContentId);
+                    CrossRealmMember* pFoundPartyMember;
+                    if (readyCheckEntry.ContentId > uint.MaxValue)
+                        pFoundPartyMember = InfoProxyCrossRealm.GetMemberByContentId(readyCheckEntry.ContentId);
+                    else
+                        pFoundPartyMember = InfoProxyCrossRealm.GetMemberByEntityId((uint)readyCheckEntry.ContentId);
+
                     if ((nint)pFoundPartyMember != nint.Zero)
                     {
-                        var name = Utils.NameToSeString(pFoundPartyMember->Name).ExtractText();
+                        var name = pFoundPartyMember->NameString;
                         readyCheckProcessedList.Add(new CorrelatedReadyCheckEntry(name, pFoundPartyMember->ContentId, pFoundPartyMember->EntityId, readyCheckEntry.Status, pFoundPartyMember->GroupIndex, pFoundPartyMember->MemberIndex));
                     }
                 }
@@ -410,42 +411,18 @@ namespace ReadyCheckHelper
         {
             if (notReadyList.Count > 0)
             {
-                //	Getting this from separate functions instead of just a localized string, since list construction may follow different rules in different languages.
-                string notReadyString;
-                switch (ClientState.ClientLanguage)
-                {
-                    case ClientLanguage.Japanese:
-                        notReadyString = LocalizationHelpers.ConstructNotReadyString_ja(notReadyList, Configuration.MaxUnreadyToListInChat);
-                        break;
-                    case ClientLanguage.English:
-                        notReadyString = LocalizationHelpers.ConstructNotReadyString_en(notReadyList, Configuration.MaxUnreadyToListInChat);
-                        break;
-                    case ClientLanguage.German:
-                        notReadyString = LocalizationHelpers.ConstructNotReadyString_de(notReadyList, Configuration.MaxUnreadyToListInChat);
-                        break;
-                    case ClientLanguage.French:
-                        notReadyString = LocalizationHelpers.ConstructNotReadyString_fr(notReadyList, Configuration.MaxUnreadyToListInChat);
-                        break;
-                    default:
-                        notReadyString = LocalizationHelpers.ConstructNotReadyString_en(notReadyList, Configuration.MaxUnreadyToListInChat);
-                        break;
-                }
+                var notReadyString = LocalizationHelpers.ConstructNotReady(notReadyList, Configuration.MaxUnreadyToListInChat);
 
                 //	If we don't delay the actual printing to chat, sometimes it comes out before the system message in the chat log.  I don't understand why it's an issue, but this is an easy kludge to make it work right consistently.
                 Task.Run(async () =>
                 {
-                    await Task.Delay(500); //***** TODO: Make this value configurable, or fix the underlying issue. *****
+                    await Task.Delay(500);
                     var chatEntry = new XivChatEntry
                     {
                         Type = Configuration.ChatChannelToUseForNotReadyMessage,
-                        Message = new SeString(new List<Payload>
-                        {
-                            //Dalamud.Game.Text.SeStringHandling.SeString.TextArrowPayloads,
-                            OpenReadyCheckWindowLink,
-                            new TextPayload(notReadyString),
-                            RawPayload.LinkTerminator
-                        })
+                        Message = new SeStringBuilder().Add(OpenReadyCheckWindowLink).AddText(notReadyString).Add(RawPayload.LinkTerminator).BuiltString,
                     };
+
                     Chat.Print(chatEntry);
                 });
             }
@@ -470,7 +447,7 @@ namespace ReadyCheckHelper
             }
         }
 
-        private void OnTerritoryChanged(ushort id)
+        private void OnTerritoryChanged(uint id)
         {
             if (Configuration.ClearReadyCheckOverlayEnteringInstance && InstancedTerritories.Contains(id))
                 PartyListOverlay.InvalidateReadyCheck();
@@ -479,14 +456,14 @@ namespace ReadyCheckHelper
         private void OnLogout(int _, int __)
         {
             ReadyCheckActive = false;
-            TimedOverlayCancellationSource?.Cancel();
+            TimedOverlayCancellationSource.Cancel();
             PartyListOverlay.InvalidateReadyCheck();
-            ProcessedReadyCheckData = null;
+            ProcessedReadyCheckData.Clear();
         }
 
         internal List<CorrelatedReadyCheckEntry> GetProcessedReadyCheckData()
         {
-            return ProcessedReadyCheckData != null ? [..ProcessedReadyCheckData] : null;
+            return ProcessedReadyCheckData;
         }
 
         private void PopulateInstancedTerritoriesList()
