@@ -33,13 +33,29 @@ public unsafe class MemoryHandler
     private void ReadyCheckInitiatedDetour(AgentReadyCheck* ptr)
     {
         ReadyCheckInitiatedHook.Original(ptr);
-        ReadyCheckInitiatedEvent?.Invoke(null, EventArgs.Empty);
+
+        try
+        {
+            ReadyCheckInitiatedEvent?.Invoke(null, EventArgs.Empty);
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.Error(ex, "Error in ReadyCheckInitiatedEvent handler");
+        }
     }
 
     private void ReadyCheckEndDetour(AgentReadyCheck* ptr)
     {
         ReadyCheckEndHook.Original(ptr);
-        ReadyCheckCompleteEvent?.Invoke(null, EventArgs.Empty);
+
+        try
+        {
+            ReadyCheckCompleteEvent?.Invoke(null, EventArgs.Empty);
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.Error(ex, "Error in ReadyCheckCompleteEvent handler");
+        }
     }
 
     internal PartyListLayoutResult? GetHUDIndicesForChar(ulong contentId, uint entityId)

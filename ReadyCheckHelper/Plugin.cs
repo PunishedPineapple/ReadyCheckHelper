@@ -51,7 +51,7 @@ namespace ReadyCheckHelper
 
         private readonly List<uint> InstancedTerritories = [];
         private List<CorrelatedReadyCheckEntry> ProcessedReadyCheckData = [];
-        private CancellationTokenSource TimedOverlayCancellationSource = new();
+        private CancellationTokenSource? TimedOverlayCancellationSource;
         public bool ReadyCheckActive { get; private set; }
 
         public readonly MemoryHandler MemoryHandler;
@@ -120,7 +120,7 @@ namespace ReadyCheckHelper
             PartyListOverlay.Dispose();
 
             InstancedTerritories.Clear();
-            TimedOverlayCancellationSource.Dispose();
+            TimedOverlayCancellationSource?.Dispose();
         }
 
         public void LanguageChanged(string langCode)
@@ -233,7 +233,7 @@ namespace ReadyCheckHelper
             //	Flag that we should start processing the data every frame.
             ReadyCheckActive = true;
             PartyListOverlay.ShowReadyCheckOverlay();
-            TimedOverlayCancellationSource.Cancel();
+            TimedOverlayCancellationSource?.Cancel();
         }
 
         private void OnReadyCheckCompleted(object? _, EventArgs __)
@@ -276,7 +276,8 @@ namespace ReadyCheckHelper
                     }
                     finally
                     {
-                        TimedOverlayCancellationSource.Dispose();
+                        TimedOverlayCancellationSource?.Dispose();
+                        TimedOverlayCancellationSource = null;
                     }
 
                     if (!ReadyCheckActive)
@@ -456,7 +457,7 @@ namespace ReadyCheckHelper
         private void OnLogout(int _, int __)
         {
             ReadyCheckActive = false;
-            TimedOverlayCancellationSource.Cancel();
+            TimedOverlayCancellationSource?.Cancel();
             PartyListOverlay.InvalidateReadyCheck();
             ProcessedReadyCheckData.Clear();
         }
