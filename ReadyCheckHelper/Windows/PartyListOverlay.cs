@@ -86,8 +86,14 @@ public class PartyListOverlay : Window, IDisposable
             if ((nint)pCrossWorldAllianceList != nint.Zero && pCrossWorldAllianceList->IsVisible)
             {
                 for (var j = 1; j < 6; ++j)
-                for (var i = 0; i < 8; ++i)
-                    DrawOnCrossWorldAllianceList(j, i, ReadyCheckStatus.Ready, pCrossWorldAllianceList, drawList);
+                {
+                    for (var i = 0; i < 8; ++i)
+                    {
+                        //  Use recognizable patterns for each party index for easier debugging.
+                        var readyVal = i % ( j + 1 ) == 0 ? ReadyCheckStatus.Ready : ReadyCheckStatus.NotReady;
+                        DrawOnCrossWorldAllianceList( j, i, readyVal, pCrossWorldAllianceList, drawList );
+                    }
+                }
             }
         }
         else
@@ -99,26 +105,26 @@ public class PartyListOverlay : Window, IDisposable
                 if (indices == null)
                     continue;
 
-                switch (indices.Value.GroupNumber)
+                switch (indices.Value.GroupIndex)
                 {
                     case 0:
                         DrawOnPartyList(indices.Value.PartyMemberIndex, result.ReadyState, pPartyList, drawList);
                         break;
                     case 1:
                         if (indices.Value.CrossWorld)
-                            DrawOnCrossWorldAllianceList(indices.Value.GroupNumber, indices.Value.PartyMemberIndex, result.ReadyState, pCrossWorldAllianceList, drawList);
+                            DrawOnCrossWorldAllianceList(indices.Value.GroupIndex, indices.Value.PartyMemberIndex, result.ReadyState, pCrossWorldAllianceList, drawList);
                         else
                             DrawOnAllianceList(indices.Value.PartyMemberIndex, result.ReadyState, pAlliance1List, drawList);
                         break;
                     case 2:
                         if (indices.Value.CrossWorld)
-                            DrawOnCrossWorldAllianceList(indices.Value.GroupNumber, indices.Value.PartyMemberIndex, result.ReadyState, pCrossWorldAllianceList, drawList);
+                            DrawOnCrossWorldAllianceList(indices.Value.GroupIndex, indices.Value.PartyMemberIndex, result.ReadyState, pCrossWorldAllianceList, drawList);
                         else
                             DrawOnAllianceList(indices.Value.PartyMemberIndex, result.ReadyState, pAlliance2List, drawList);
                         break;
                     default:
                         if (indices.Value.CrossWorld)
-                            DrawOnCrossWorldAllianceList(indices.Value.GroupNumber, indices.Value.PartyMemberIndex, result.ReadyState, pCrossWorldAllianceList, drawList);
+                            DrawOnCrossWorldAllianceList(indices.Value.GroupIndex, indices.Value.PartyMemberIndex, result.ReadyState, pCrossWorldAllianceList, drawList);
                         break;
                 }
             }
@@ -189,6 +195,7 @@ public class PartyListOverlay : Window, IDisposable
             return;
 
         var alliance = pAllianceList->Alliances[allianceIndex-1]; // Group 1 is not in the span, so we need to subtract 1 group from this
+        if( alliance.ComponentBase is null ) return;
         var allianceNode = alliance.ComponentBase->OwnerNode;
         var allianceMember = alliance.Members[partyMemberIndex];
         var allianceMemberNode = allianceMember.AtkComponentBase->OwnerNode;

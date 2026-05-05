@@ -94,7 +94,15 @@ public unsafe class MemoryHandler
             var pGroupMember = InfoProxyCrossRealm.GetMemberByContentId(contentId);
             if (pGroupMember == null || contentId == 0)
                 return null;
-            return new PartyListLayoutResult(infoProxyCrossRealm->IsCrossRealm && !infoProxyCrossRealm->IsInAllianceRaid, pGroupMember->GroupIndex, pGroupMember->MemberIndex);
+
+            //  In order to match how this plugin indexes in the UI, for cross-world alliances, we need
+            //  to make the player's group be 0, and shift any groups before the player's group by one.
+            var groupIndex = pGroupMember->GroupIndex;
+            if( groupIndex == infoProxyCrossRealm->LocalPlayerGroupIndex ) groupIndex = 0;
+            else if( groupIndex < infoProxyCrossRealm->LocalPlayerGroupIndex )
+                     groupIndex += 1;
+
+            return new PartyListLayoutResult( !infoProxyCrossRealm->IsInAllianceRaid, groupIndex, pGroupMember->MemberIndex);
         }
 
         return null;
@@ -106,11 +114,11 @@ public struct PartyListLayoutResult
     public PartyListLayoutResult(bool crossWorld, int groupNumber, int partyMemberIndex)
     {
         CrossWorld = crossWorld;
-        GroupNumber = groupNumber;
+        GroupIndex = groupNumber;
         PartyMemberIndex = partyMemberIndex;
     }
 
     public readonly bool CrossWorld;
-    public readonly int GroupNumber;
+    public readonly int GroupIndex;
     public readonly int PartyMemberIndex;
 }
