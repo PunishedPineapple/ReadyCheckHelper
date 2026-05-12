@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Threading;
@@ -298,7 +298,7 @@ namespace ReadyCheckHelper
 
             //	We're only in a crossworld party if the cross realm proxy says we are; however, it can say we're cross-realm when
             //	we're in a regular party if we entered an instance as a cross-world party, so account for that too.
-            if (infoProxy->IsCrossRealm && !infoProxy->IsInAllianceRaid && groupManager->MainGroup.MemberCount < 1)
+            if (infoProxy->IsCrossRealm && groupManager->MainGroup.MemberCount < 1)
                 ProcessReadyCheckResults_CrossWorld();
             else
                 ProcessReadyCheckResults_Regular();

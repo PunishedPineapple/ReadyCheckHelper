@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -77,6 +77,7 @@ public class DebugWindow : Window, IDisposable
         var crossWorldGroupCount = infoproxy->GroupCount;
         ImGui.Text($"Number of Cross-World Groups: {crossWorldGroupCount}");
         ImGui.Text( $"Current Cross-World Group Index: {infoproxy->LocalPlayerGroupIndex}" );
+        ImGui.Text( $"InfoProxy Alliance: {infoproxy->IsInAllianceRaid}" );
         for (var i = 0; i < crossWorldGroupCount; ++i)
             ImGui.Text($"Number of Party Members (Group {i}): {InfoProxyCrossRealm.GetGroupMemberCount(i)}");
 
@@ -107,6 +108,7 @@ public class DebugWindow : Window, IDisposable
         ImGui.NextColumn();
 
         ImGui.Text("Party Data:");
+        ImGui.Text( $"GroupManager MainGroup Count: {groupManager->MainGroup.MemberCount}" );
         for (var i = 0; i < 8; ++i)
         {
             var pGroupMember = groupManager->MainGroup.GetPartyMemberByIndex(i);

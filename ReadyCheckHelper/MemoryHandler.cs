@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -102,7 +102,7 @@ public unsafe class MemoryHandler
             else if( groupIndex < infoProxyCrossRealm->LocalPlayerGroupIndex )
                      groupIndex += 1;
 
-            return new PartyListLayoutResult( !infoProxyCrossRealm->IsInAllianceRaid, groupIndex, pGroupMember->MemberIndex);
+            return new PartyListLayoutResult( true, groupIndex, pGroupMember->MemberIndex);
         }
 
         return null;
