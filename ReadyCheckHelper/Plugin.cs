@@ -297,8 +297,9 @@ namespace ReadyCheckHelper
                 return;
 
             //	We're only in a crossworld party if the cross realm proxy says we are; however, it can say we're cross-realm when
-            //	we're in a regular party if we entered an instance as a cross-world party, so account for that too.
-            if (infoProxy->IsCrossRealm && groupManager->MainGroup.MemberCount < 1)
+            //	we're in a regular party if we entered an instance as a cross-world party, so account for that too.  The GroupManager
+            //  check for an alliance covers situations where you are the only player left in your alliance, but still in the raid.
+            if (infoProxy->IsCrossRealm && !groupManager->MainGroup.IsAlliance && groupManager->MainGroup.MemberCount < 1)
                 ProcessReadyCheckResults_CrossWorld();
             else
                 ProcessReadyCheckResults_Regular();

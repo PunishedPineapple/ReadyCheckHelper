@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Numerics;
 using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Utility;
@@ -141,6 +141,11 @@ public class PartyListOverlay : Window, IDisposable
 
         var partyMember = pPartyList->PartyMembers[index];
         var pPartyMemberNode = partyMember.PartyMemberComponent->OwnerNode;
+
+        // Prevent icons showing for members that have left in the case that we are the only remaining player in an instance that was joined as a cross-world party.
+        if (pPartyMemberNode is null || !pPartyMemberNode->IsVisible())
+            return;
+
         var pIconNode = partyMember.ClassJobIcon;
         var partyAlign = pPartyList->PartyListAtkResNode->Y;
 
@@ -169,6 +174,11 @@ public class PartyListOverlay : Window, IDisposable
         var allianceMember = pAllianceList->AllianceMembers[index];
         var allianceMemberNode = allianceMember.ComponentBase->OwnerNode;
         var pIconNode = allianceMember.ComponentBase->GetImageNodeById(9)->GetAsAtkImageNode();
+
+        // Prevent icons showing for members that have left in the case that we are the only remaining player in an instance that
+        // was joined as a cross-world alliance.  The caveat here is that someone that has disconnected will also not get an icon.
+        if (allianceMember.ClassJobImageNode is null || !allianceMember.ClassJobImageNode->IsVisible())
+            return;
 
         var iconOffset = (new Vector2(0, 0) + Plugin.Configuration.AllianceListIconOffset) * pAllianceList->Scale;
         var iconSize = new Vector2(pIconNode->Width / 3.0f, pIconNode->Height / 3.0f) * Plugin.Configuration.AllianceListIconScale * pAllianceList->Scale;

@@ -70,8 +70,9 @@ public unsafe class MemoryHandler
             return null;
 
         //	We're only in a crossworld party if the cross realm proxy says we are; however, it can say we're cross-realm when
-        //	we're in a regular party if we entered an instance as a cross-world party, so account for that too.
-        if (groupManager->MainGroup.MemberCount > 0)
+        //	we're in a regular party if we entered an instance as a cross-world party, so account for that too.  The GroupManager
+        //  check for an alliance covers situations where you are the only player left in your alliance, but still in the raid.
+        if (groupManager->MainGroup.MemberCount > 0 || groupManager->MainGroup.IsAlliance)
         {
             for (var i = 0; i < 8; ++i)
             {
