@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Game.Text;
 using Dalamud.Interface.Utility;
@@ -78,6 +78,8 @@ public class ConfigWindow : Window, IDisposable
             ImGui.DragFloat($"{Language.ConfigOptionPartyListIconScale}###PartyListIconScale", ref Plugin.Configuration.mPartyListIconScale, 0.1f, 0.3f, 5.0f, "%f", ImGuiSliderFlags.AlwaysClamp);
             ImGui.DragFloat2($"{Language.ConfigOptionAllianceListIconOffset}###AllianceListIconOffset", ref Plugin.Configuration.mAllianceListIconOffset, 1f, -100f, 100f);
             ImGui.DragFloat($"{Language.ConfigOptionAllianceListIconScale}###AllianceListIconScale", ref Plugin.Configuration.mAllianceListIconScale, 0.1f, 0.3f, 5.0f, "%f", ImGuiSliderFlags.AlwaysClamp);
+            ImGui.DragFloat2($"{Language.ConfigOptionCrossWorldAllianceListIconOffset}###CrossWorldAllianceListIconOffset", ref Plugin.Configuration.mCrossWorldAllianceListIconOffset, 1f, -100f, 100f);
+            ImGui.DragFloat($"{Language.ConfigOptionCrossWorldAllianceListIconScale}###CrossWorldAllianceListIconScale", ref Plugin.Configuration.mCrossWorldAllianceListIconScale, 0.1f, 0.3f, 5.0f, "%f", ImGuiSliderFlags.AlwaysClamp);
         }
 
         ImGuiHelpers.ScaledDummy(5.0f);

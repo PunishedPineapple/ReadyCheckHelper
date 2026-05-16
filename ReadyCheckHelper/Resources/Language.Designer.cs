@@ -168,6 +168,24 @@ namespace ReadyCheckHelper.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Alliance List Icon Offset (Cross-World).
+        /// </summary>
+        internal static string ConfigOptionCrossWorldAllianceListIconOffset {
+            get {
+                return ResourceManager.GetString("ConfigOptionCrossWorldAllianceListIconOffset", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Alliance List Icon Scale (Cross-World).
+        /// </summary>
+        internal static string ConfigOptionCrossWorldAllianceListIconScale {
+            get {
+                return ResourceManager.GetString("ConfigOptionCrossWorldAllianceListIconScale", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Draw ready check on party/alliance lists..
         /// </summary>
         internal static string ConfigOptionDrawonPartyAllianceLists {
